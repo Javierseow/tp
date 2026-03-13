@@ -31,6 +31,18 @@ public abstract class Workout {
         this.isDone = false;
     }
 
+    public LocalDate getDate() {
+        return date;
+    }
+
+    public String getDescription() {
+        return description;
+    }
+
+    public boolean getDoneStatus() {
+        return isDone;
+    }
+
     /**
      * Returns a visual indicator of the workout's completion status.
      *
