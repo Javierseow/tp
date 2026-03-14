@@ -3,20 +3,20 @@ package seedu.FitLogger;
 import java.time.LocalDate;
 
 public class RunWorkout extends Workout{
-    protected String distance;
-    protected String duration;
+    protected double distance;
+    protected double duration;
 
-    public RunWorkout(String description, LocalDate date, String distance, String duration) {
+    public RunWorkout(String description, LocalDate date, double distance, double duration) {
         super(description, date);
         this.distance = distance;
         this.duration = duration;
     }
 
-    public String getDistance() {
+    public double getDistance() {
         return distance;
     }
 
-    public String getTime() {
+    public double getDuration() {
         return duration;
     }
 
