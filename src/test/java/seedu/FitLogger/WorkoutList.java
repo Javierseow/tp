@@ -1,6 +1,5 @@
 package seedu.FitLogger;
 
-import java.time.LocalDate;
 import java.util.ArrayList;
 
 public class WorkoutList {
@@ -10,16 +9,39 @@ public class WorkoutList {
         workouts = new ArrayList<>();
     }
 
-    public void addRunWorkout(String description, LocalDate date, double distance, double duration) {
-        workouts.add(new RunWorkout(description, date, distance, duration));
+    public void addWorkout(Workout workout) {
+        workouts.add(workout);
     }
 
-    public void addStrengthWorkout(String description, double weight, int sets, int reps, LocalDate date) {
-        workouts.add(new StrengthWorkout(description, weight, sets, reps, date));
-    }
-
-    //give the actual index in the array for now, not the index in the list (i.e. minus 1 then pass in)
     public void deleteWorkout(int workoutToRemove) {
         workouts.remove(workoutToRemove);
+    }
+
+    public void markDone(int index) {
+        workouts.get(index).markAsDone();
+    }
+
+    public void markNotDone(int index) {
+        workouts.get(index).markAsNotDone();
+    }
+
+    public boolean findWorkout(int index, String keyword) {
+        return workouts.get(index).getDescription().contains(keyword);
+    }
+
+    public boolean isEmpty() {
+        return workouts.isEmpty();
+    }
+
+    public int getSize() {
+        return workouts.size();
+    }
+
+    public Workout getWorkout(int index) {
+        return workouts.get(index);
+    }
+
+    public ArrayList<Workout> getWorkouts() {
+        return workouts;
     }
 }
