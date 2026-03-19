@@ -11,4 +11,3 @@ Welcome to FitLogger!
 Feel free to Add your own workout
 Workouts saved to data/fitlogger.txt
 Goodbye! See you at your next workout!
-
