@@ -16,9 +16,7 @@ public class Parser {
     private static final int MAX_RUN_INFO = 50;
     private static Logger logger = Logger.getLogger("Foo");
 
-    public static Command parse(String fullCommand,
-            WorkoutList workouts,
-            Storage storage)
+    public static Command parse(String fullCommand, WorkoutList workouts, Storage storage)
             throws FitLoggerException {
         logger.log(Level.INFO, "going to start parsing");
         assert fullCommand != null : "Parser.parse was called with a null string!";
@@ -27,18 +25,18 @@ public class Parser {
         String arguments = (parts.length > 1) ? parts[1].trim() : "";
 
         switch (commandWord) {
-            case "delete":
-                return new DeleteCommand(workouts, arguments);
+        case "delete":
+            return new DeleteCommand(workouts, arguments);
 
-            case "exit":
-                return new ExitCommand(storage, workouts);
+        case "exit":
+            return new ExitCommand(storage, workouts);
 
-            // case "help":
-            // return new HelpCommand();
+        // case "help":
+        // return new HelpCommand();
 
-            default:
-                throw new FitLoggerException("I'm sorry, I don't know what '" + commandWord + "' means.\n"
-                        + "See 'help'");
+        default:
+            throw new FitLoggerException("I'm sorry, I don't know what '" + commandWord
+                    + "' means.\n" + "See 'help'");
         }
     }
 }
