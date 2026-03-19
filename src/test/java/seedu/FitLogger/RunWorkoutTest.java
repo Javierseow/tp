@@ -1,4 +1,4 @@
-package seedu.FitLogger;
+package seedu.fitlogger;
 
 import org.junit.jupiter.api.Test;
 import java.time.LocalDate;
@@ -6,6 +6,8 @@ import java.time.LocalDate;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+
+import seedu.fitlogger.workout.RunWorkout;
 // import static org.junit.jupiter.api.Assertions.fail;
 
 /**
@@ -33,7 +35,8 @@ public class RunWorkoutTest {
     public void testMarkAsDone() {
         RunWorkout run = new RunWorkout("Sprint", LocalDate.now(), 2, 15);
         run.markAsDone();
-        assertTrue(run.isDone, "isDone should be true after calling markAsDone()");
+        assertTrue(run.getDoneStatus()
+                , "isDone should be true after calling markAsDone()");
     }
 
     @Test

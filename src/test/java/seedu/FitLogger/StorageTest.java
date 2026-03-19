@@ -1,4 +1,4 @@
-package seedu.FitLogger;
+package seedu.fitlogger;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -13,6 +13,9 @@ import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+
+import seedu.fitlogger.workout.Running;
+import seedu.fitlogger.workout.Workout;
 
 class StorageTest {
 

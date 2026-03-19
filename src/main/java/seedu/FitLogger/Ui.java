@@ -1,4 +1,4 @@
-package seedu.FitLogger;
+package seedu.fitlogger;
 import java.util.Scanner;
 
 public class Ui {

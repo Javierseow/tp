@@ -9,5 +9,6 @@
 -----------------------------------------------------
 Welcome to FitLogger!
 Feel free to Add your own workout
-execute function run
+Workouts saved to data/fitlogger.txt
 Goodbye! See you at your next workout!
+

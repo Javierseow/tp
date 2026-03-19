@@ -1,4 +1,4 @@
-package seedu.FitLogger;
+package seedu.fitlogger;
 
 import static org.junit.jupiter.api.Assertions.assertTrue;
 

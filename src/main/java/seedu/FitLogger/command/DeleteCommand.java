@@ -1,4 +1,8 @@
-package seedu.FitLogger;
+package seedu.fitlogger.command;
+
+import seedu.fitlogger.Ui;
+import seedu.fitlogger.workout.Workout;
+import seedu.fitlogger.workout.WorkoutList;
 
 /**
  * Deletes a workout from the in-memory workout list by name or by user-facing index.

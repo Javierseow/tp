@@ -1,4 +1,4 @@
-package seedu.FitLogger;
+package seedu.fitlogger;
 
 import org.junit.jupiter.api.Test;
 import java.time.LocalDate;
@@ -6,6 +6,10 @@ import java.time.LocalDate;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+
+import seedu.fitlogger.workout.RunWorkout;
+import seedu.fitlogger.workout.StrengthWorkout;
+import seedu.fitlogger.workout.WorkoutList;
 
 class WorkoutListTest {
     private WorkoutList list;
