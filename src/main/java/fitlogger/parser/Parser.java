@@ -7,14 +7,14 @@ import fitlogger.exception.FitLoggerException;
 import fitlogger.workoutlist.WorkoutList;
 import fitlogger.storage.Storage;
 
-import java.util.logging.Level;
-import java.util.logging.Logger;
+// import java.util.logging.Level;
+// import java.util.logging.Logger;
 
 public class Parser {
     // temporary for now, change later when we know how much description there is
     private static final int MAX_LIFT_INFO = 100;
     private static final int MAX_RUN_INFO = 50;
-    private static Logger logger = Logger.getLogger("Foo");
+    // private static Logger logger = Logger.getLogger("Foo");
 
     public static Command parse(String fullCommand, WorkoutList workouts, Storage storage)
             throws FitLoggerException {
