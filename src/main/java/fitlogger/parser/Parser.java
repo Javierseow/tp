@@ -1,9 +1,6 @@
 package fitlogger.parser;
 
-import fitlogger.command.AddWorkoutCommand;
-import fitlogger.command.Command;
-import fitlogger.command.DeleteCommand;
-import fitlogger.command.ExitCommand;
+import fitlogger.command.*;
 import fitlogger.exception.FitLoggerException;
 import fitlogger.workout.RunWorkout;
 import fitlogger.workout.Workout;
@@ -45,6 +42,8 @@ public class Parser {
                     Double.parseDouble(runInfo[1]), Double.parseDouble(runInfo[2]));
             return new AddWorkoutCommand(workouts, runToBeAdded);
 
+        case "list":
+            return new ViewHistoryCommand(workouts);
         // case "help":
         // return new HelpCommand();
 
