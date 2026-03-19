@@ -1,9 +1,9 @@
-package seedu.fitlogger.workout;
+package fitlogger.workout;
 
 import java.time.LocalDate;
 
 /**
- * Represents an abstract workout in the FitLogger application.
+ * Represents an abstract workout in the FitLogger.command.FitLogger application.
  * This class serves as a base for specific workout types and contains
  * shared logic for tracking completion status and dates.
  */

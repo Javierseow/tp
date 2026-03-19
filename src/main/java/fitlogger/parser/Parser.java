@@ -1,4 +1,4 @@
-package seedu.fitlogger;
+package fitlogger.parser;
 
 public class Parser {
     //temporary for now, change later when we know how much description there is

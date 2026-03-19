@@ -1,5 +1,7 @@
-package seedu.fitlogger;
+package fitlogger;
 
+import fitlogger.storage.Storage;
+import fitlogger.workout.RunWorkout;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -14,8 +16,7 @@ import java.util.List;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-import seedu.fitlogger.workout.Running;
-import seedu.fitlogger.workout.Workout;
+import fitlogger.workout.Workout;
 
 class StorageTest {
 
@@ -43,40 +44,44 @@ class StorageTest {
         storage.saveData(emptyList);
 
         File file = new File(FILE_PATH);
-        assertTrue(file.exists(), "File should be created even for empty workout list");
+        assertTrue(file.exists(), "File should be created even for empty FitLogger.command.workout list");
         assertEquals(0, file.length(), "File should be empty when no workouts saved");
     }
 
     @Test
-    void saveData_singleRunningWorkout_writesCorrectFormat() throws IOException {
+    void saveData_singleRunWorkoutWorkout_writesCorrectFormat() throws IOException {
         List<Workout> workouts = new ArrayList<>();
-        workouts.add(new Running("Morning run", LocalDate.of(2024, 3, 15), 5.0));
+        workouts.add(new RunWorkout("Morning run", LocalDate.of(2024, 3, 15),
+                5.0, 1.0));
 
         storage.saveData(workouts);
 
         List<String> lines = Files.readAllLines(new File(FILE_PATH).toPath());
         assertEquals(1, lines.size());
-        assertEquals("R | 0 | Morning run | 2024-03-15 | 5.0", lines.get(0));
+        assertEquals("R | 0 | Morning run | 2024-03-15 | 5.0 | 1.0", lines.get(0));
     }
 
     @Test
     void saveData_multipleWorkouts_writesAllLines() throws IOException {
         List<Workout> workouts = new ArrayList<>();
-        workouts.add(new Running("Easy jog", LocalDate.of(2024, 3, 10), 3.0));
-        workouts.add(new Running("Long run", LocalDate.of(2024, 3, 12), 10.5));
+        workouts.add(new RunWorkout("Easy jog", LocalDate.of(2024, 3, 10),
+                3.0, 1.0));
+        workouts.add(new RunWorkout("Long run", LocalDate.of(2024, 3, 12),
+                10.5, 1.0));
 
         storage.saveData(workouts);
 
         List<String> lines = Files.readAllLines(new File(FILE_PATH).toPath());
         assertEquals(2, lines.size());
-        assertEquals("R | 0 | Easy jog | 2024-03-10 | 3.0", lines.get(0));
-        assertEquals("R | 0 | Long run | 2024-03-12 | 10.5", lines.get(1));
+        assertEquals("R | 0 | Easy jog | 2024-03-10 | 3.0 | 1.0", lines.get(0));
+        assertEquals("R | 0 | Long run | 2024-03-12 | 10.5 | 1.0", lines.get(1));
     }
 
     @Test
     void saveData_markedAsDoneWorkout_savesDoneStatus() throws IOException {
         List<Workout> workouts = new ArrayList<>();
-        Running run = new Running("Tempo run", LocalDate.of(2024, 3, 20), 8.0);
+        RunWorkout run = new RunWorkout("Tempo run", LocalDate.of(2024, 3, 20),
+                8.0, 1.0);
         run.markAsDone();
         workouts.add(run);
 
@@ -84,7 +89,7 @@ class StorageTest {
 
         List<String> lines = Files.readAllLines(new File(FILE_PATH).toPath());
         assertEquals(1, lines.size());
-        assertEquals("R | 1 | Tempo run | 2024-03-20 | 8.0", lines.get(0));
+        assertEquals("R | 1 | Tempo run | 2024-03-20 | 8.0 | 1.0", lines.get(0));
     }
 
     @Test
@@ -97,7 +102,7 @@ class StorageTest {
         }
 
         List<Workout> workouts = new ArrayList<>();
-        workouts.add(new Running("Test run", LocalDate.now(), 1.0));
+        workouts.add(new RunWorkout("Test run", LocalDate.now(), 1.0, 1.0));
 
         storage.saveData(workouts);
 

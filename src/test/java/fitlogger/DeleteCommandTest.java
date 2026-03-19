@@ -1,4 +1,4 @@
-package seedu.fitlogger;
+package fitlogger;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -6,18 +6,21 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.time.LocalDate;
 
+import fitlogger.workout.RunWorkout;
 import org.junit.jupiter.api.Test;
 
-import seedu.fitlogger.command.DeleteCommand;
-import seedu.fitlogger.workout.Running;
-import seedu.fitlogger.workout.WorkoutList;
+import fitlogger.command.DeleteCommand;
+import fitlogger.workoutlist.WorkoutList;
+import fitlogger.ui.Ui;
 
 class DeleteCommandTest {
     @Test
     void deleteWorkout_existingWorkout_deletesWorkout() {
         WorkoutList workouts = new WorkoutList();
-        workouts.addWorkout(new Running("Squat", LocalDate.of(2026, 3, 15), 1.0));
-        workouts.addWorkout(new Running("Bench Press", LocalDate.of(2026, 3, 15), 1.0));
+        workouts.addWorkout(new RunWorkout("Squat", LocalDate.of(2026, 3, 15),
+                1.0, 1.0));
+        workouts.addWorkout(new RunWorkout("Bench Press", LocalDate.of(2026, 3, 15),
+                1.0, 1.0));
         TestUi ui = new TestUi();
 
         DeleteCommand command = new DeleteCommand(workouts, "squat");
@@ -31,9 +34,12 @@ class DeleteCommandTest {
     @Test
     void deleteWorkout_byIndex_deletesWorkoutAtOneBasedPosition() {
         WorkoutList workouts = new WorkoutList();
-        workouts.addWorkout(new Running("Squat", LocalDate.of(2026, 3, 15), 1.0));
-        workouts.addWorkout(new Running("Bench Press", LocalDate.of(2026, 3, 15), 1.0));
-        workouts.addWorkout(new Running("Deadlift", LocalDate.of(2026, 3, 15), 1.0));
+        workouts.addWorkout(new RunWorkout("Squat", LocalDate.of(2026, 3, 15),
+                1.0, 1.0));
+        workouts.addWorkout(new RunWorkout("Bench Press", LocalDate.of(2026, 3, 15),
+                1.0, 1.0));
+        workouts.addWorkout(new RunWorkout("Deadlift", LocalDate.of(2026, 3, 15),
+                1.0, 1.0));
         TestUi ui = new TestUi();
 
         DeleteCommand command = new DeleteCommand(workouts, "3");
@@ -48,7 +54,8 @@ class DeleteCommandTest {
     @Test
     void deleteWorkout_missingWorkoutName_showsUsageMessage() {
         WorkoutList workouts = new WorkoutList();
-        workouts.addWorkout(new Running("Deadlift", LocalDate.of(2026, 3, 15), 1.0));
+        workouts.addWorkout(new RunWorkout("Deadlift", LocalDate.of(2026, 3, 15),
+                1.0, 1.0));
         TestUi ui = new TestUi();
 
         DeleteCommand command = new DeleteCommand(workouts, " ");
@@ -62,7 +69,8 @@ class DeleteCommandTest {
     @Test
     void deleteWorkout_nonExistingWorkout_showsNotFoundMessage() {
         WorkoutList workouts = new WorkoutList();
-        workouts.addWorkout(new Running("Deadlift", LocalDate.of(2026, 3, 15), 1.0));
+        workouts.addWorkout(new RunWorkout("Deadlift", LocalDate.of(2026, 3, 15),
+                1.0, 1.0));
         TestUi ui = new TestUi();
 
         DeleteCommand command = new DeleteCommand(workouts, "Pull Up");
@@ -75,7 +83,8 @@ class DeleteCommandTest {
     @Test
     void deleteWorkout_zeroIndex_showsNotFoundMessage() {
         WorkoutList workouts = new WorkoutList();
-        workouts.addWorkout(new Running("Deadlift", LocalDate.of(2026, 3, 15), 1.0));
+        workouts.addWorkout(new RunWorkout("Deadlift", LocalDate.of(2026, 3, 15),
+                1.0, 1.0));
         TestUi ui = new TestUi();
 
         DeleteCommand command = new DeleteCommand(workouts, "0");

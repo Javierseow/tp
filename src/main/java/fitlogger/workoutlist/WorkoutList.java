@@ -1,4 +1,6 @@
-package seedu.fitlogger.workout;
+package fitlogger.workoutlist;
+
+import fitlogger.workout.Workout;
 
 import java.util.ArrayList;
 

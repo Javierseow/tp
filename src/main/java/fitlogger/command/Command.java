@@ -1,6 +1,6 @@
-package seedu.fitlogger.command;
+package fitlogger.command;
 
-import seedu.fitlogger.Ui;
+import fitlogger.ui.Ui;
 
 public abstract class Command {
     public abstract void execute(Ui ui);

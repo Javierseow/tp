@@ -1,10 +1,10 @@
-package seedu.fitlogger;
+package fitlogger;
 
 import org.junit.jupiter.api.Test;
 import java.time.LocalDate;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-import seedu.fitlogger.workout.StrengthWorkout;
+import fitlogger.workout.StrengthWorkout;
 
 public class StrengthWorkoutTest {
 

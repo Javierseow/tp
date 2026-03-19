@@ -1,4 +1,4 @@
-package seedu.fitlogger.workout;
+package fitlogger.workout;
 
 import java.time.LocalDate;
 

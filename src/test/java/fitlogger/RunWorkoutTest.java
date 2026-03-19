@@ -1,4 +1,4 @@
-package seedu.fitlogger;
+package fitlogger;
 
 import org.junit.jupiter.api.Test;
 import java.time.LocalDate;
@@ -7,7 +7,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 
-import seedu.fitlogger.workout.RunWorkout;
+import fitlogger.workout.RunWorkout;
 // import static org.junit.jupiter.api.Assertions.fail;
 
 /**
@@ -28,7 +28,7 @@ public class RunWorkoutTest {
         assertEquals(0.2, run.getDuration(), "Time should match constructor input");
 
         // Test default status
-        assertFalse(run.getDoneStatus(), "New workout should have isDone as false");
+        assertFalse(run.getDoneStatus(), "New FitLogger.command.workout should have isDone as false");
     }
 
     @Test

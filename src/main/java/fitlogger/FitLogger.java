@@ -1,8 +1,11 @@
-package seedu.fitlogger;
+package fitlogger;
 
-import seedu.fitlogger.command.Command;
-import seedu.fitlogger.command.ExitCommand;
-import seedu.fitlogger.workout.WorkoutList;
+import fitlogger.command.Command;
+import fitlogger.command.ExitCommand;
+import fitlogger.parser.Parser;
+import fitlogger.storage.Storage;
+import fitlogger.ui.Ui;
+import fitlogger.workoutlist.WorkoutList;
 
 public class FitLogger {
     private Ui ui;

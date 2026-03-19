@@ -1,11 +1,11 @@
-package seedu.fitlogger;
+package fitlogger.storage;
 
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.List;
 
-import seedu.fitlogger.workout.Workout;
+import fitlogger.workout.Workout;
 
 /**
  * Handles persistence of workout data to and from the file system.

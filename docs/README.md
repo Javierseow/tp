@@ -1,4 +1,4 @@
-# FitLogger
+# fitlogger.fitlogger
 
 {Give product intro here}
 
