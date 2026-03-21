@@ -20,15 +20,33 @@ public class StrengthWorkout extends Workout {
      * @param date        The date the workout was completed.
      */
     public StrengthWorkout(String description, double weight, int sets, int reps, LocalDate date) {
-        super(description, date); // Passes the name and date to the Workout parent class
+        super(description, date);
+
+        assert weight >= 0 : "Weight should be 0 or greater";
+        assert sets > 0 : "Sets should be at least 1";
+        assert reps > 0 : "Reps should be at least 1";
+
         this.weight = weight;
         this.sets = sets;
         this.reps = reps;
     }
 
+    public double getWeight() {
+        return weight;
+    }
+
+    public int getSets() {
+        return sets;
+    }
+
+    public int getReps() {
+        return reps;
+    }
+
     /**
      * Formats the workout details into a string for saving to a text file.
-     * Includes the type [L], done status (1 or 0), date, and lifting stats.
+     *
+     * <p>Format: {@code L | <status> | <description> | <date> | <weight> | <sets> | <reps>}
      *
      * @return A formatted string suitable for local storage.
      */
@@ -46,7 +64,6 @@ public class StrengthWorkout extends Workout {
      */
     @Override
     public String toString() {
-        // super.toString() handles the "[ ] Bench Press (Date: 2026-03-13)" part
         return "[L]" + super.toString() + " - " + weight + "kg (" + sets + " sets of " + reps + " reps)";
     }
 }
