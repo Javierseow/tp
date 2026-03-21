@@ -8,6 +8,6 @@
                           |___/ |___/            
 -----------------------------------------------------
 Welcome to FitLogger!
-Feel free to Add your own workout
+Type 'help' to see available commands.
 Workouts saved.
 Goodbye! See you at your next workout!
