@@ -1,17 +1,17 @@
 package fitlogger.command;
 
+import fitlogger.storage.Storage;
 import fitlogger.ui.Ui;
 import fitlogger.workoutlist.WorkoutList;
 
 public class ViewHistoryCommand extends Command {
-    private final WorkoutList workouts;
 
-    public ViewHistoryCommand(WorkoutList workouts) {
-        this.workouts = workouts;
+    public ViewHistoryCommand() {
+        super();
     }
 
     @Override
-    public void execute(Ui ui) {
+    public void execute(Storage storage, WorkoutList workouts, Ui ui) {
         ui.showMessage("Here's your past exercises");
         ui.showLine();
         for (int i = 0; i < workouts.getSize(); i++) {
