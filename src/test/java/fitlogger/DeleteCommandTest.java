@@ -62,7 +62,7 @@ class DeleteCommandTest {
 
         assertTrue(workouts.getWorkoutAtIndex(0).getDescription().equals("Deadlift"));
         assertEquals(
-                "Please specify a workout to delete. Usage: delete workout <WORKOUT_NAME> or delete <index>",
+            "Please specify a workout to delete. Usage: delete <WORKOUT_NAME> or delete <index>",
                 ui.lastOutput);
     }
 
