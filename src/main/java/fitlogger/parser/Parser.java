@@ -25,29 +25,29 @@ public class Parser {
         String arguments = (parts.length > 1) ? parts[1].trim() : "";
 
         switch (commandWord) {
-            case "delete":
-                return new DeleteCommand(arguments);
+        case "delete":
+            return new DeleteCommand(arguments);
 
-            case "exit":
-                return new ExitCommand();
+        case "exit":
+            return new ExitCommand();
 
-            case "add-run":
-                return parseAddRun(arguments, workouts);
+        case "add-run":
+            return parseAddRun(arguments, workouts);
 
-            case "add-lift":
-                return parseAddLift(arguments, workouts);
+        case "add-lift":
+            return parseAddLift(arguments, workouts);
 
-            case "list":
-                // fallthrough intentional — same behaviour as history
-            case "history":
-                return new ViewHistoryCommand();
+        case "list":
+            // fallthrough intentional — same behaviour as history
+        case "history":
+            return new ViewHistoryCommand();
 
-            case "help":
-                return new HelpCommand();
+        case "help":
+            return new HelpCommand();
 
-            default:
-                throw new FitLoggerException(
-                        "I'm sorry, I don't know what '" + commandWord + "' means.\nSee 'help'");
+        default:
+            throw new FitLoggerException(
+                    "I'm sorry, I don't know what '" + commandWord + "' means.\nSee 'help'");
         }
     }
 
