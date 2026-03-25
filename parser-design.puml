@@ -1,0 +1,80 @@
+@startuml name
+skinparam handwritten false
+skinparam ParticipantPadding 20
+
+participant ":FitLogger" as FitLogger
+participant "<<class>>\nParser" as Parser
+
+[-> FitLogger : run()
+activate FitLogger
+
+FitLogger -> Parser : parse(fullCommand, ...)
+activate Parser
+
+note over Parser : commandWord = splitInput(...)[0]
+
+alt commandWord == "delete"
+    create "d:DeleteCommand" as Delete
+    Parser -> Delete : new DeleteCommand(arguments)
+    activate Delete
+    Delete --> Parser : d
+    deactivate Delete
+
+else commandWord == "exit"
+    create "e:ExitCommand" as Exit
+    Parser -> Exit : new ExitCommand()
+    activate Exit
+    Exit --> Parser : e
+    deactivate Exit
+
+else commandWord == "add-run"
+    Parser -> Parser : parseAddRun(arguments, ...)
+    activate Parser
+    
+    create "r:RunWorkout" as Run
+    Parser -> Run : new RunWorkout(...)
+    
+    create "ar:AddWorkoutCommand" as AddRun
+    Parser -> AddRun : new AddWorkoutCommand(run)
+    
+    Parser --> Parser : ar
+    deactivate Parser
+
+else commandWord == "add-lift"
+    Parser -> Parser : parseAddLift(arguments, ...)
+    activate Parser
+    
+    create "l:StrengthWorkout" as Lift
+    Parser -> Lift : new StrengthWorkout(...)
+    
+    create "al:AddWorkoutCommand" as AddLift
+    Parser -> AddLift : new AddWorkoutCommand(lift)
+    
+    Parser --> Parser : al
+    deactivate Parser
+
+else commandWord == "list" OR "history"
+    create "v:ViewHistoryCommand" as View
+    Parser -> View : new ViewHistoryCommand()
+    activate View
+    View --> Parser : v
+    deactivate View
+
+else commandWord == "help"
+    create "h:HelpCommand" as Help
+    Parser -> Help : new HelpCommand()
+    activate Help
+    Help --> Parser : h
+    deactivate Help
+
+else default (Unknown Command)
+    note over Parser : throw FitLoggerException
+    Parser --[#red]> FitLogger : exception
+end
+
+Parser --> FitLogger : command
+deactivate Parser
+
+[<-- FitLogger
+deactivate FitLogger
+@enduml

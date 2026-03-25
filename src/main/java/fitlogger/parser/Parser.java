@@ -12,13 +12,12 @@ import fitlogger.workout.RunWorkout;
 import fitlogger.workout.StrengthWorkout;
 import fitlogger.workout.Workout;
 import fitlogger.workoutlist.WorkoutList;
-import fitlogger.storage.Storage;
 
 import java.time.LocalDate;
 
 public class Parser {
 
-    public static Command parse(String fullCommand, WorkoutList workouts, Storage storage)
+    public static Command parse(String fullCommand, WorkoutList workouts)
             throws FitLoggerException {
         assert fullCommand != null : "Parser.parse was called with a null string!";
         String[] parts = splitInput(fullCommand, " ", 2);
@@ -29,11 +28,11 @@ public class Parser {
         case "delete":
             return new DeleteCommand(arguments);
 
-        case "edit":
-            return parseEdit(arguments, workouts);
-
         case "exit":
             return new ExitCommand();
+
+        case "edit":
+            return parseEdit(arguments, workouts);
 
         case "add-run":
             return parseAddRun(arguments, workouts);
@@ -101,7 +100,8 @@ public class Parser {
             throw new FitLoggerException("Duration must be a positive number.");
         }
         if (!Double.isFinite(distance) || !Double.isFinite(durationMinutes)) {
-            throw new FitLoggerException("Distance and duration must be realistic positive numbers.");
+            throw new FitLoggerException(
+                    "Distance and duration must be realistic positive numbers.");
         }
 
         Workout run = new RunWorkout(name, LocalDate.now(), distance, durationMinutes);
@@ -153,9 +153,6 @@ public class Parser {
         if (weight < 0) {
             throw new FitLoggerException("Weight cannot be negative.");
         }
-        if (!Double.isFinite(weight)) {
-            throw new FitLoggerException("Weight must be a finite number.");
-        }
         if (sets <= 0) {
             throw new FitLoggerException("Sets must be a positive integer.");
         }
@@ -170,25 +167,26 @@ public class Parser {
     /**
      * Parses an edit command.
      *
-     * <p>Expected format: {@code edit <index> <field>/<value>}</p>
+     * <p>
+     * Expected format: {@code edit <index> <field>/<value>}
+     * </p>
      *
      * @param arguments Everything after "edit ".
-     * @param workouts  The active workout list.
+     * @param workouts The active workout list.
      * @return An {@link EditCommand} that updates one workout field.
      * @throws FitLoggerException if arguments are missing or malformed.
      */
-    private static Command parseEdit(String arguments, WorkoutList workouts) throws FitLoggerException {
+    private static Command parseEdit(String arguments, WorkoutList workouts)
+            throws FitLoggerException {
         if (arguments.isBlank()) {
             throw new FitLoggerException(
-                    "Missing arguments for edit.\n"
-                            + "Usage: edit <index> <field>/<value>");
+                    "Missing arguments for edit.\n" + "Usage: edit <index> <field>/<value>");
         }
 
         String[] editParts = splitInput(arguments, " ", 2);
         if (editParts.length < 2) {
             throw new FitLoggerException(
-                    "Invalid format for edit.\n"
-                            + "Usage: edit <index> <field>/<value>");
+                    "Invalid format for edit.\n" + "Usage: edit <index> <field>/<value>");
         }
 
         int index;
@@ -205,8 +203,7 @@ public class Parser {
         String[] fieldValue = splitInput(editParts[1], "/", 2);
         if (fieldValue.length < 2) {
             throw new FitLoggerException(
-                    "Invalid format for edit.\n"
-                            + "Usage: edit <index> <field>/<value>");
+                    "Invalid format for edit.\n" + "Usage: edit <index> <field>/<value>");
         }
 
         String fieldName = fieldValue[0].trim();
@@ -214,8 +211,7 @@ public class Parser {
 
         if (fieldName.isBlank() || newValue.isBlank()) {
             throw new FitLoggerException(
-                    "Invalid format for edit.\n"
-                            + "Usage: edit <index> <field>/<value>");
+                    "Invalid format for edit.\n" + "Usage: edit <index> <field>/<value>");
         }
 
         return new EditCommand(index, fieldName, newValue);

@@ -186,18 +186,56 @@ If no target is found, the user sees a not-found message.
 
 ---
 
-### Notes for team writeups
+## Design & Implementation
 
-For each team member section, use this practical structure:
+### Command Architecture
 
-1. Problem statement and user value
-2. Design decisions and alternatives considered
-3. Class/method-level implementation details
-4. Validation and error-handling strategy
-5. Test coverage and current limitations
+The execution logic of **FitLogger** is centered around the **Command Pattern**. This architectural choice decouples the object that invokes an operation (the main execution loop in `FitLogger`) from the objects that actually perform the action.
 
-This format communicates implementation depth clearly and consistently.
+#### Design Rationale
+By encapsulating a request as an object, the system achieves several key design goals:
+* **Separation of Concerns:** The `FitLogger` main class does not need to know the internal logic of specific features; it only needs to call a uniform `execute()` method.
+* **Extensibility:** Adding new features (e.g., `edit-run`) only requires creating a new subclass of `Command` and updating the `Parser`, leaving the core execution loop untouched.
+* **Uniform Error Handling:** Since all commands follow the same interface, exceptions thrown during execution (like `FitLoggerException`) can be caught and handled globally by the main loop.
 
+#### Components and Interaction
+The Command architecture consists of three primary elements:
+1.  **`Command` (Abstract Class):** The base template for all actions. It defines the `execute(Storage, WorkoutList, Ui)` method, ensuring every command has access to the necessary system components.
+2.  **Concrete Implementations:** Subclasses like `AddWorkoutCommand` and `DeleteCommand` store specific user-inputted states—such as a `Workout` object or a name `String`—internally until execution.
+3.  **Polymorphic Execution:** The `FitLogger#run()` method maintains a "Parse-then-Execute" loop. It treats all returned objects as the abstract `Command` type, invoking `isExit()` to determine if the application should terminate.
+
+Unlike "ready-to-run" implementations, FitLogger's commands are **stateless regarding the system** but **stateful regarding user input**. They are instantiated with arguments by the `Parser` but only gain access to application data (`WorkoutList`) and persistence (`Storage`) at the moment of execution.
+
+![Command Class Diagram](../out/command-design/command-design.png)
+
+---
+
+### Parser Implementation
+
+The `Parser` component is a static utility class responsible for transforming raw user input strings into the executable `Command` objects described above.
+
+#### Execution Logic
+The parsing logic is centralized in the `Parser#parse()` method, following a two-stage process:
+1.  **Tokenization:** The input string is split into a `commandWord` and `arguments` using the `splitInput` helper method.
+2.  **Command Dispatch:** A `switch` block routes the `commandWord` to the appropriate command constructor (e.g., `DeleteCommand`, `ExitCommand`) or specialized sub-parser methods (e.g., `parseAddRun`, `parseAddLift`).
+
+The following sequence diagram illustrates the internal logic of the `Parser` when handling `add-run` or `delete` commands:
+
+![Parser Sequence Diagram](../out/parser-design/parser-design.png)
+
+---
+
+### Design Considerations
+
+**Aspect: Class Structure**
+* **Current Implementation:** Static utility class.
+    * **Pros:** Simple to use across the application without maintaining state; lightweight for the current scope.
+    * **Cons:** Harder to "mock" during unit testing compared to an instance-based approach.
+* **Alternative Considered:** Instance-based Parser with Dependency Injection.
+    * **Reason for Rejection:** Given the current requirements of FitLogger, a static parser is sufficient and avoids unnecessary complexity.
+
+**Aspect: Data Validation**
+* The parser acts as a gatekeeper for data integrity. It ensures that user-inputted text (like workout names) does not contain reserved characters (`|` or `/`) used by the `Storage` component. This prevents potential file corruption during save/load operations.
 
 ## Product scope
 ### Target user profile

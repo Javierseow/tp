@@ -1,0 +1,45 @@
+@startuml name
+skinparam handwritten false
+skinparam classAttributeIconSize 0
+hide circle
+
+' The Abstract Base Class
+abstract class Command {
+    + {abstract} execute(storage: Storage, workouts: WorkoutList, ui: Ui)
+    + isExit(): boolean
+}
+
+' Concrete Implementations
+class AddWorkoutCommand {
+    - workoutToAdd: Workout
+    + execute(...)
+}
+
+class DeleteCommand {
+    - workoutName: String
+    + execute(...)
+}
+
+class ExitCommand {
+    + execute(...)
+    + isExit(): boolean
+}
+
+class ViewHistoryCommand {
+    + execute(...)
+}
+
+class HelpCommand {
+    + execute(...)
+}
+
+' Inheritance Arrows (pointing TO the abstract class)
+AddWorkoutCommand -up-|> Command
+DeleteCommand -up-|> Command
+ExitCommand -up-|> Command
+ViewHistoryCommand -up-|> Command
+HelpCommand -up-|> Command
+
+' Layout hint to keep it organized
+AddWorkoutCommand -[hidden]right- DeleteCommand
+@enduml
