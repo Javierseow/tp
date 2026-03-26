@@ -1,5 +1,6 @@
-package fitlogger.command;
+package fitlogger;
 
+import fitlogger.command.ViewProfileCommand;
 import fitlogger.profile.UserProfile;
 import fitlogger.storage.Storage;
 import fitlogger.ui.Ui;
@@ -41,7 +42,7 @@ public class ViewProfileCommandTest {
         List<String> outputs = ui.getOutputs();
         assertTrue(outputs.contains("Alice"));
         assertTrue(outputs.contains("1.75m"));
-        assertTrue(outputs.contains("65.5kg"));
+        assertTrue(outputs.contains("65.50kg"));
     }
 
     @Test

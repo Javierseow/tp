@@ -102,7 +102,7 @@ public class UpdateProfileCommandTest {
         UpdateProfileCommand command = new UpdateProfileCommand(null, -1, 58.0);
         command.execute(storage, workouts, ui, profile);
 
-        assertTrue(ui.getOutputs().contains("Weight has been updated to 58.0kg"));
+        assertTrue(ui.getOutputs().contains("Weight has been updated to 58.00kg"));
     }
 
     @Test
@@ -113,8 +113,8 @@ public class UpdateProfileCommandTest {
         List<String> outputs = ui.getOutputs();
         assertEquals(3, outputs.size());
         assertTrue(outputs.contains("Name has been updated to Dana"));
-        assertTrue(outputs.contains("Height has been updated to 1.7m"));
-        assertTrue(outputs.contains("Weight has been updated to 60.0kg"));
+        assertTrue(outputs.contains("Height has been updated to 1.70m"));
+        assertTrue(outputs.contains("Weight has been updated to 60.00kg"));
     }
 
     @Test
