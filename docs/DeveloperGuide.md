@@ -330,6 +330,225 @@ focused on a single workout type.
 
 ---
 
+### Enhancement 4: `RunWorkout`
+
+#### Purpose and user value
+
+`RunWorkout` represents a running workout entry in FitLogger. It extends the abstract 
+`Workout` base class and adds two run-specific fields: distance (in kilometres) and 
+duration (in minutes). This gives users a dedicated, validated data model for tracking
+their runs separately from strength workouts.
+
+Command format:
+
+```
+add-run <description> d/<distance> t/<durationMinutes>
+```
+
+Examples:
+
+- `add-run Morning Jog d/5.0 t/30`
+- `add-run Tempo Run d/10.5 t/55.5`
+
+#### Design overview
+
+`RunWorkout` sits at the data layer of FitLogger's architecture. It is constructed by `Parser.parseAddRun(...)` and passed into `AddWorkoutCommand`, following the same pipeline as `StrengthWorkout`:
+
+1. `Parser.parse(...)` identifies the `add-run` keyword and routes input to `Parser.parseAddRun(...)`.
+2. `parseAddRun(...)` validates the format, extracts the name and numeric fields, and constructs a `RunWorkout` object.
+3. The `RunWorkout` is wrapped in an `AddWorkoutCommand` and returned to the main loop.
+4. `AddWorkoutCommand.execute(...)` adds the workout to `WorkoutList` and confirms via `Ui`.
+
+#### Class-level design
+
+`RunWorkout` extends the same abstract `Workout` base class as `StrengthWorkout`. This polymorphic design allows `WorkoutList` to store both types in a single `ArrayList<Workout>`. Domain validation is enforced directly in the setters, keeping invalid state from ever being stored.
+
+The two run-specific fields and their constraints are:
+
+|Field|Type|Constraint|
+|---|---|---|
+|`distance`|`double`|Must be finite and > 0|
+|`durationMinutes`|`double`|Must be finite and > 0|
+
+#### Storage format
+
+A logged run is persisted to `data/fitlogger.txt` in the following format:
+
+```
+R | <description> | <date> | <distance> | <durationMinutes>
+```
+
+For example:
+
+```
+R | Morning Jog | 2026-03-27 | 5.0 | 30.0
+```
+
+The `R` type prefix allows `Storage.loadData()` to distinguish run entries from lift entries (`L`) when reconstructing the workout list on startup.
+
+#### Validation and error handling
+
+Validation is split between `Parser.parseAddRun(...)` (format-level) and `RunWorkout` setters (domain-level):
+
+|Input error|Error message shown|
+|---|---|
+|Missing arguments|`Missing arguments for add-run.` + usage hint|
+|Missing flag (e.g. no `d/`)|`Invalid format for add-run.` + usage hint|
+|Non-numeric distance/duration|Parse error with usage hint|
+|Zero or negative distance|`Distance must be a positive number.`|
+|Zero or negative duration|`Duration must be a positive number.`|
+|Non-finite value (`NaN`, `Infinity`)|`Distance must be a positive number.` / `Duration must be a positive number.`|
+
+#### Design considerations
+
+**Alternative 1 (current choice): Setters with validation in `RunWorkout`**
+
+- Pros: Domain rules are enforced at the source. Invalid state cannot exist in a `RunWorkout` object at any point after construction. Setters are reused by `EditCommand` without duplicating validation logic.
+- Cons: Checked exceptions from setters must be handled at every call site (constructor and `EditCommand`).
+
+**Alternative 2: Validate only in `Parser`**
+
+- Pros: Simpler class design with no exceptions thrown from setters.
+- Cons: Validation logic is duplicated or bypassed if `RunWorkout` is ever constructed outside of `Parser`. This breaks encapsulation and makes the domain model unreliable.
+
+Setter-level validation was chosen to ensure the domain model is always self-consistent, regardless of how it is constructed.
+
+---
+
+### Enhancement 5: `ViewShoeMileageCommand`
+
+#### Purpose and user value
+
+`ViewShoeMileageCommand` lets users see their total running distance across all logged run workouts, along with a count of how many runs they have completed. This gives runners a quick summary of their accumulated shoe mileage — a common metric for knowing when to replace running shoes.
+
+Command format:
+
+```
+view-total-mileage
+```
+
+Example output:
+
+```
+Your total distance ran is 45.30km across 7 runs.
+```
+
+#### Design overview
+
+This command follows FitLogger's standard command pipeline. It holds no user-supplied state and requires no arguments — it is a pure read operation over `WorkoutList`.
+
+1. `Parser.parse(...)` identifies the `view-total-mileage` keyword and returns a `ViewShoeMileageCommand`.
+2. The main loop calls `execute(storage, workouts, ui)`.
+3. The command iterates over all workouts, filters for `RunWorkout` instances, and accumulates the total distance.
+4. The result is displayed via `Ui`.
+
+#### Component-level behavior
+
+`ViewShoeMileageCommand.execute(...)` performs the following steps:
+
+1. Initialise `totalMileage = 0.0` and `runWorkoutCount = 0`.
+2. Retrieve all workouts from `WorkoutList` via `getWorkouts()`.
+3. For each workout, check if it is an instance of `RunWorkout` using a pattern-matching `instanceof`.
+4. If so, assert that `distance >= 0` (a defensive sanity check), then accumulate distance and increment the count.
+5. Display the formatted result via `ui.showMessage(...)`.
+
+The command is deliberately read-only: it does not modify `WorkoutList`, `Storage`, or `UserProfile`.
+
+#### Design considerations
+
+**Alternative 1 (current choice): Filter by `instanceof` in the command**
+
+- Pros: Simple and self-contained. No changes needed to `WorkoutList` or `Workout`. Easily extended to show per-workout breakdowns in the future.
+- Cons: The command is aware of a concrete subtype (`RunWorkout`), which is a mild coupling to the class hierarchy.
+
+**Alternative 2: Add a `getTotalRunDistance()` method to `WorkoutList`**
+
+- Pros: Encapsulates the filtering logic inside `WorkoutList`, making the command even simpler.
+- Cons: Adds a run-specific method to `WorkoutList`, which should ideally remain type-agnostic. As more workout types are added, this approach leads to a proliferation of type-specific query methods on `WorkoutList`.
+
+The current approach was chosen to keep `WorkoutList` general-purpose while accepting the minor coupling in the command itself.
+
+---
+
+### Enhancement 6: `ViewProfileCommand` and `UpdateProfileCommand`
+
+#### Purpose and user value
+
+These two commands give users a persistent identity within FitLogger by managing a `UserProfile` that stores their name, height, and weight.
+
+- `ViewProfileCommand` displays the current profile, with friendly placeholder text for any fields not yet set.
+- `UpdateProfileCommand` allows users to update one or more profile fields in a single command.
+
+Command formats:
+
+```
+profile view
+profile set name <name>
+profile set height <metres>
+profile set weight <kg>
+```
+
+#### Design overview
+
+Both commands extend `ProfileCommand`, which itself extends the abstract `Command` base class. This intermediate layer groups profile-related commands without adding any behaviour — it serves as a marker for future extensibility (for example, a `DeleteProfileCommand`).
+
+The execution flow is:
+
+1. `Parser.parse(...)` identifies the `profile` keyword and routes to sub-parsers for `view` or `set`.
+2. For `profile view`, a `ViewProfileCommand` is returned with no arguments.
+3. For `profile set`, `Parser` extracts whichever fields are present and constructs an `UpdateProfileCommand` with the parsed values. Fields not present in the input are passed as `null` (name) or `-1` (height/weight) to signal "no change".
+4. The main loop calls `execute(storage, workouts, ui, profile)` polymorphically.
+
+#### Component-level behavior
+
+**`ViewProfileCommand.execute(...)`**
+
+1. Call `ui.showLine()` to open the display block.
+2. Display name — if `profile.getName()` is `null`, show `"name not set yet"`.
+3. Display height — if `profile.getHeight()` is `-1`, show `"height not set yet"`; otherwise format to 2 decimal places with the `m` suffix.
+4. Display weight — if `profile.getWeight()` is `-1`, show `"weight not set yet"`; otherwise format to 2 decimal places with the `kg` suffix.
+5. Call `ui.showLine()` to close the display block.
+
+**`UpdateProfileCommand.execute(...)`**
+
+1. If `newName != null`, call `profile.setName(newName)` and confirm via `Ui`.
+2. If `newHeight != -1`, call `profile.setHeight(newHeight)` and confirm via `Ui`.
+3. If `newWeight != -1`, call `profile.setWeight(newWeight)` and confirm via `Ui`.
+
+Only fields explicitly supplied by the user are updated. Fields passed as sentinel values (`null` / `-1`) are silently skipped, preserving existing profile data.
+
+#### Sentinel value design decision
+
+`-1` is used as a sentinel for unset numeric profile fields (height and weight) because:
+
+- It is outside any valid physical range, so it cannot be confused with a real value.
+- The same sentinel is used consistently in both `UserProfile` storage and `UpdateProfileCommand` argument passing, keeping the contract clear.
+
+An assertion in `UpdateProfileCommand`'s constructor enforces this:
+
+java
+
+``` java
+assert newHeight == -1 || newHeight >= 0 : "Height is invalid";
+assert newWeight == -1 || newWeight >= 0 : "Weight is invalid";
+```
+
+#### Design considerations
+
+**Alternative 1 (current choice): Separate `ViewProfileCommand` and `UpdateProfileCommand`**
+
+- Pros: Each command has a single responsibility. `ViewProfileCommand` is always a safe read-only operation. Adding a new profile sub-command in the future (e.g. `profile reset`) only requires a new subclass.
+- Cons: Slightly more classes to maintain.
+
+**Alternative 2: Single `ProfileCommand` that handles both `view` and `set`**
+
+- Pros: Fewer classes.
+- Cons: The command must carry a mode flag and branch internally, mixing read and write logic in one class. This reduces clarity and makes testing harder.
+
+Separate commands were chosen to preserve single responsibility and keep each command easy to test and extend independently.
+
+---
+
 ### Notes for team writeups
 
 ### Command Architecture
