@@ -1,5 +1,6 @@
 package fitlogger.ui;
 
+import fitlogger.workout.StrengthWorkout;
 import fitlogger.workout.Workout;
 import fitlogger.exercisedictionary.ExerciseDictionary;
 
@@ -39,8 +40,6 @@ public class Ui {
 
     /**
      * Displays an error message prefixed with "[ERROR]".
-     * All {@link fitlogger.exception.FitLoggerException} messages should be
-     * routed here rather than printed directly.
      *
      * @param message The error description to display.
      */
@@ -60,6 +59,7 @@ public class Ui {
                 + "Edit field: name/description/weight/sets/reps/distance/duration\n"
                 + "    view-database                              View exercise shortcuts and their IDs\n"
                 + "    view-total-mileage                         View total distance ran across all run workouts\n"
+                + "    lastlift <EXERCISE_NAME>                   View most recent lift for an exercise\n"
                 + "    history                                    View all logged workouts\n"
                 + "    delete <index>                             Delete workout by number\n"
                 + "    delete <name>                              Delete workout by name\n"
@@ -90,4 +90,20 @@ public class Ui {
             showMessage("  [" + entry.getKey() + "] -> " + entry.getValue());
         }
         showLine();
-    }}
+    }
+
+    /**
+     * Displays the stats of the most recently found {@link StrengthWorkout}.
+     *
+     * @param lift The most recent strength workout to display.
+     */
+    public void showLastLift(StrengthWorkout lift) {
+        showLine();
+        showMessage("Last recorded lift for: " + lift.getDescription());
+        showMessage("  Date   : " + lift.getDate());
+        showMessage("  Weight : " + lift.getWeight() + "kg");
+        showMessage("  Sets   : " + lift.getSets());
+        showMessage("  Reps   : " + lift.getReps());
+        showLine();
+    }
+}

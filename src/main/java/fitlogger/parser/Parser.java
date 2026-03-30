@@ -10,6 +10,7 @@ import fitlogger.command.HelpCommand;
 import fitlogger.command.UpdateProfileCommand;
 import fitlogger.command.ViewDatabaseCommand;
 import fitlogger.command.ViewHistoryCommand;
+import fitlogger.command.ViewLastLiftCommand;
 import fitlogger.command.ViewProfileCommand;
 import fitlogger.command.ViewShoeMileageCommand;
 import fitlogger.exception.FitLoggerException;
@@ -62,6 +63,9 @@ public class Parser {
 
         case "view-database":
             return new ViewDatabaseCommand(dictionary);
+
+        case "lastlift":
+            return new ViewLastLiftCommand(arguments);
 
         default:
             throw new FitLoggerException(
