@@ -21,7 +21,6 @@ import fitlogger.workout.Workout;
 import fitlogger.workoutlist.WorkoutList;
 import fitlogger.exercisedictionary.ExerciseDictionary;
 
-import java.io.FileReader;
 import java.time.LocalDate;
 
 public class Parser {
