@@ -408,7 +408,7 @@ The two run-specific fields and their constraints are:
 A logged run is persisted to `data/fitlogger.txt` in the following format:
 
 ```
-R | <description> | <date> | <distance> | <durationMinutes>
+R | <description> | <date> | <distanceKm> | <durationMinutes>
 ```
 
 For example:
@@ -529,7 +529,7 @@ Command formats:
 ```
 profile view
 profile set name <name>
-profile set height <metres>
+profile set height <meters>
 profile set weight <kg>
 ```
 
