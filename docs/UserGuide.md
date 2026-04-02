@@ -176,6 +176,40 @@ Saves data and closes FitLogger.
 
 Format: `exit`
 
+--- 
+
+### Getting help: `help`
+
+If you are unsure of a command format or want to see all available features, use the help command.
+
+Format: `help`
+
+- Displays a comprehensive list of all commands.
+- Provides the specific syntax/flags required for each command (e.g., `w/`, `s/`, `r/`).
+- Useful for new users to quickly learn the "Hybrid Athlete" workflow.
+
+---
+
+### Understanding Error Messages and Validation
+
+FitLogger includes an upgraded parser designed to catch common data entry mistakes before they save to your history.
+
+#### Input Validation
+When you enter data, the parser checks for the following:
+- **Missing Flags:** If you forget a mandatory flag (like `w/` in `add-lift`), FitLogger will identify the missing component and show you the correct usage.
+- **Type Mismatches:** If you enter text where a number is expected (e.g., `weight/abc`), you will receive a specific error: `Invalid number format`.
+- **Logic Bounds:** The parser prevents "impossible" data. For example, setting a height of `0.1m` or a weight of `1000kg` will trigger a warning to ensure your profile remains accurate.
+
+#### Error Handling Strategy
+If a command fails, FitLogger will not crash. Instead, it will:
+1. Provide a clear error message explaining *what* went wrong.
+2. Show the **correct format** for that specific command.
+3. Return you to the command prompt so you can try again immediately.
+
+**Example of an Error Response:**
+Input: `add-lift Bench w/heavy s/3`
+Output:
+
 ## FAQ
 
 **Q**: How do I transfer my data to another computer? 
