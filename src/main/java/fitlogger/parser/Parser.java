@@ -384,12 +384,14 @@ public class Parser {
                     throw new FitLoggerException("Invalid profile action. \n"
                             + "Usage: profile view OR profile set <field> <value>");
                 }
+            default:
+                throw new FitLoggerException("Invalid profile action. \n"
+                        + "Usage: profile view OR profile set <field> <value>");
             }
         } catch (IndexOutOfBoundsException e) {
             throw new FitLoggerException(
                     "No value provided. \n" + "Please provide a value to be updated.");
         }
-        throw new FitLoggerException("Unexpected error parsing profile command.");
     }
 
     private static double updateHeightOrWeight(String value, double lowerBound, double upperBound)
