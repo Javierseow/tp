@@ -37,10 +37,10 @@ public class EditCommand extends Command {
     /**
      * Executes the edit operation and reports success or validation errors.
      *
-     * @param storage  Storage dependency (unused by this command).
-     * @param workouts Workout list containing workouts to edit.
-     * @param ui       UI used to display command result messages.
-     * @param profile
+      * @param storage Storage component used to persist workouts and profile.
+      * @param workouts Workout list containing workouts to edit.
+      * @param ui UI used to display command result messages.
+      * @param profile User profile saved together with workouts.
      */
     @Override
     public void execute(Storage storage, WorkoutList workouts, Ui ui, UserProfile profile) {
@@ -113,6 +113,11 @@ public class EditCommand extends Command {
         }
 
         if (isUpdated) {
+            boolean isSaved = storage.saveData(workouts.getWorkouts(), profile);
+            if (!isSaved) {
+                ui.showError("Failed to save workouts to disk. Changes remain only in memory.");
+                return;
+            }
             ui.showMessage("Updated workout " + oneBasedIndex + ": " + workout);
         }
     }

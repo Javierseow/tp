@@ -41,6 +41,8 @@ public class FitLogger {
                 isExit = c.isExit();
             } catch (FitLoggerException e) {
                 ui.showError(e.getMessage());
+            } catch (Exception e) {
+                ui.showError("Unexpected error: " + e.getMessage());
             }
         }
     }

@@ -7,6 +7,7 @@ import fitlogger.command.DeleteCommand;
 import fitlogger.command.EditCommand;
 import fitlogger.command.ExitCommand;
 import fitlogger.command.HelpCommand;
+import fitlogger.command.SearchDateCommand;
 import fitlogger.command.UpdateProfileCommand;
 import fitlogger.command.ViewDatabaseCommand;
 import fitlogger.command.ViewHistoryCommand;
@@ -22,6 +23,7 @@ import fitlogger.workoutlist.WorkoutList;
 import fitlogger.exercisedictionary.ExerciseDictionary;
 
 import java.time.LocalDate;
+import java.time.format.DateTimeParseException;
 
 public class Parser {
 
@@ -35,6 +37,9 @@ public class Parser {
         switch (commandWord) {
         case "delete":
             return new DeleteCommand(arguments);
+
+        case "search-date":
+            return parseSearchDate(arguments);
 
         case "exit":
             return new ExitCommand();
@@ -315,6 +320,29 @@ public class Parser {
         }
 
         return new EditCommand(index, fieldName, newValue);
+    }
+
+    /**
+     * Parses a search-date command.
+     *
+     * <p>Expected format: {@code search-date <YYYY-MM-DD>}</p>
+     *
+     * @param arguments Everything after {@code search-date }.
+     * @return A {@link SearchDateCommand} for the parsed date.
+     * @throws FitLoggerException if the date is missing or not in ISO format.
+     */
+    private static Command parseSearchDate(String arguments) throws FitLoggerException {
+        if (arguments.isBlank()) {
+            throw new FitLoggerException(
+                    "Missing arguments for search-date.\nUsage: search-date <YYYY-MM-DD>");
+        }
+
+        try {
+            return new SearchDateCommand(LocalDate.parse(arguments.trim()));
+        } catch (DateTimeParseException exception) {
+            throw new FitLoggerException(
+                    "Invalid date format for search-date.\nUsage: search-date <YYYY-MM-DD>");
+        }
     }
 
     private static Command parseProfile(String arguments) throws FitLoggerException {

@@ -20,14 +20,18 @@ public class ExitCommand extends Command {
     /**
      * Saves workout data and displays a goodbye message to the user.
      *
-     * @param storage  FitLogger.command.Storage handler used to save workout data.
+     * @param storage Storage handler used to save workout data.
      * @param workouts Workout list to be saved.
-     * @param ui       UI used to display output messages. *
-     * @param profile
+     * @param ui UI used to display output messages.
+     * @param profile User profile saved together with workouts.
      */
     public void execute(Storage storage, WorkoutList workouts, Ui ui, UserProfile profile) {
-        storage.saveData(workouts.getWorkouts(), profile);
-        ui.showMessage("Workouts saved.");
+        boolean isSaved = storage.saveData(workouts.getWorkouts(), profile);
+        if (isSaved) {
+            ui.showMessage("Workouts saved.");
+        } else {
+            ui.showError("Failed to save workouts to disk before exit.");
+        }
         ui.showGoodbye();
     }
 

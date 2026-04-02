@@ -5,10 +5,12 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.time.LocalDate;
+import java.util.List;
 
 import fitlogger.exception.FitLoggerException;
 import fitlogger.profile.UserProfile;
 import fitlogger.workout.RunWorkout;
+import fitlogger.workout.Workout;
 import org.junit.jupiter.api.Test;
 
 import fitlogger.command.DeleteCommand;
@@ -26,7 +28,7 @@ class DeleteCommandTest {
         TestUi ui = new TestUi();
         UserProfile profile = new UserProfile();
 
-        DeleteCommand command = new DeleteCommand("squat");
+        DeleteCommand command = new DeleteCommand("1");
         command.execute(storage, workouts, ui, profile);
 
         assertEquals(1, workouts.getSize());
@@ -66,12 +68,12 @@ class DeleteCommandTest {
 
         assertTrue(workouts.getWorkoutAtIndex(0).getDescription().equals("Deadlift"));
         assertEquals(
-            "Please specify a workout to delete. Usage: delete <WORKOUT_NAME> or delete <index>",
+            "Please specify a workout index to delete. Usage: delete <index>",
                 ui.lastOutput);
     }
 
     @Test
-    void deleteWorkout_nonExistingWorkout_showsNotFoundMessage() throws FitLoggerException {
+    void deleteWorkout_nonNumericInput_showsPositiveIntegerMessage() throws FitLoggerException {
         Storage storage = new Storage();
         WorkoutList workouts = new WorkoutList();
         workouts.addWorkout(new RunWorkout("Deadlift", LocalDate.of(2026, 3, 15), 1.0, 1.0));
@@ -82,11 +84,11 @@ class DeleteCommandTest {
         command.execute(storage, workouts, ui, profile);
 
         assertEquals(1, workouts.getSize());
-        assertEquals("Workout not found: Pull Up", ui.lastOutput);
+        assertEquals("Workout index must be a positive integer.", ui.lastOutput);
     }
 
     @Test
-    void deleteWorkout_zeroIndex_showsNotFoundMessage() throws FitLoggerException {
+    void deleteWorkout_zeroIndex_showsInvalidIndexMessage() throws FitLoggerException {
         Storage storage = new Storage();
         WorkoutList workouts = new WorkoutList();
         workouts.addWorkout(new RunWorkout("Deadlift", LocalDate.of(2026, 3, 15), 1.0, 1.0));
@@ -97,15 +99,114 @@ class DeleteCommandTest {
         command.execute(storage, workouts, ui, profile);
 
         assertEquals(1, workouts.getSize());
-        assertEquals("Workout not found: 0", ui.lastOutput);
+        assertEquals("Invalid workout index: 0", ui.lastOutput);
+    }
+
+    @Test
+    void deleteWorkout_nullInput_showsUsageMessage() throws FitLoggerException {
+        Storage storage = new Storage();
+        WorkoutList workouts = new WorkoutList();
+        workouts.addWorkout(new RunWorkout("Deadlift", LocalDate.of(2026, 3, 15), 1.0, 1.0));
+        TestUi ui = new TestUi();
+        UserProfile profile = new UserProfile();
+
+        DeleteCommand command = new DeleteCommand(null);
+        command.execute(storage, workouts, ui, profile);
+
+        assertEquals(1, workouts.getSize());
+        assertEquals("Please specify a workout index to delete. Usage: delete <index>", ui.lastOutput);
+    }
+
+    @Test
+    void deleteWorkout_outOfRangeIndex_showsInvalidIndexMessage() throws FitLoggerException {
+        Storage storage = new Storage();
+        WorkoutList workouts = new WorkoutList();
+        workouts.addWorkout(new RunWorkout("Deadlift", LocalDate.of(2026, 3, 15), 1.0, 1.0));
+        TestUi ui = new TestUi();
+        UserProfile profile = new UserProfile();
+
+        DeleteCommand command = new DeleteCommand(" 2 ");
+        command.execute(storage, workouts, ui, profile);
+
+        assertEquals(1, workouts.getSize());
+        assertEquals("Invalid workout index: 2", ui.lastOutput);
+    }
+
+    @Test
+    void deleteWorkout_success_callsSaveData() throws FitLoggerException {
+        FakeStorage storage = new FakeStorage();
+        WorkoutList workouts = new WorkoutList();
+        workouts.addWorkout(new RunWorkout("Deadlift", LocalDate.of(2026, 3, 15), 1.0, 1.0));
+        TestUi ui = new TestUi();
+        UserProfile profile = new UserProfile();
+
+        DeleteCommand command = new DeleteCommand("1");
+        command.execute(storage, workouts, ui, profile);
+
+        assertTrue(storage.saveCalled);
+        assertEquals(profile, storage.savedProfile);
+        assertEquals(0, storage.savedWorkouts.size());
+    }
+
+    @Test
+    void deleteWorkout_invalidInput_doesNotCallSaveData() throws FitLoggerException {
+        FakeStorage storage = new FakeStorage();
+        WorkoutList workouts = new WorkoutList();
+        workouts.addWorkout(new RunWorkout("Deadlift", LocalDate.of(2026, 3, 15), 1.0, 1.0));
+        TestUi ui = new TestUi();
+        UserProfile profile = new UserProfile();
+
+        DeleteCommand command = new DeleteCommand("invalid");
+        command.execute(storage, workouts, ui, profile);
+
+        assertFalse(storage.saveCalled);
+    }
+
+    @Test
+    void deleteWorkout_saveFailure_showsErrorAndNoSuccessMessage() throws FitLoggerException {
+        FakeStorage storage = new FakeStorage();
+        storage.shouldSaveSucceed = false;
+        WorkoutList workouts = new WorkoutList();
+        workouts.addWorkout(new RunWorkout("Deadlift", LocalDate.of(2026, 3, 15), 1.0, 1.0));
+        TestUi ui = new TestUi();
+        UserProfile profile = new UserProfile();
+
+        DeleteCommand command = new DeleteCommand("1");
+        command.execute(storage, workouts, ui, profile);
+
+        assertTrue(storage.saveCalled);
+        assertEquals("Failed to save workouts to disk. Changes remain only in memory.", ui.lastError);
+        assertFalse("Deleted workout: Deadlift".equals(ui.lastOutput));
+    }
+
+    private static class FakeStorage extends Storage {
+        private boolean saveCalled;
+        private boolean shouldSaveSucceed = true;
+        private List<Workout> savedWorkouts;
+        private UserProfile savedProfile;
+
+        @Override
+        public boolean saveData(List<Workout> workouts, UserProfile profile) {
+            saveCalled = true;
+            savedWorkouts = workouts;
+            savedProfile = profile;
+            return shouldSaveSucceed;
+        }
     }
 
     private static class TestUi extends Ui {
         private String lastOutput;
+        private String lastError;
 
         @Override
         public void showMessage(String command) {
             lastOutput = command;
         }
+
+        @Override
+        public void showError(String message) {
+            lastError = message;
+        }
     }
 }
+

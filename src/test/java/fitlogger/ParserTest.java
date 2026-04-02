@@ -2,6 +2,10 @@ package fitlogger;
 
 import fitlogger.command.AddWorkoutCommand;
 import fitlogger.command.Command;
+import fitlogger.command.DeleteCommand;
+import fitlogger.command.EditCommand;
+import fitlogger.command.ExitCommand;
+import fitlogger.command.SearchDateCommand;
 import fitlogger.command.ViewDatabaseCommand;
 import fitlogger.exercisedictionary.ExerciseDictionary;
 import fitlogger.exception.FitLoggerException;
@@ -205,6 +209,42 @@ class ParserTest {
     void parse_viewDatabase_returnsViewDatabaseCommand() throws FitLoggerException {
         Command cmd = Parser.parse("view-database", workouts, dictionary);
         assertTrue(cmd instanceof ViewDatabaseCommand, "Expected ViewDatabaseCommand for view-database");
+    }
+
+    @Test
+    void parse_searchDate_returnsSearchDateCommand() throws FitLoggerException {
+        Command cmd = Parser.parse("search-date 2026-03-15", workouts, dictionary);
+        assertTrue(cmd instanceof SearchDateCommand, "Expected SearchDateCommand for search-date");
+    }
+
+    @Test
+    void searchDate_missingDate_throwsFitLoggerException() {
+        assertThrows(FitLoggerException.class,
+                () -> Parser.parse("search-date", workouts, dictionary));
+    }
+
+    @Test
+    void searchDate_invalidDate_throwsFitLoggerException() {
+        assertThrows(FitLoggerException.class,
+                () -> Parser.parse("search-date 2026-15-03", workouts, dictionary));
+    }
+
+    @Test
+    void parse_delete_returnsDeleteCommand() throws FitLoggerException {
+        Command cmd = Parser.parse("delete 1", workouts, dictionary);
+        assertTrue(cmd instanceof DeleteCommand, "Expected DeleteCommand for delete");
+    }
+
+    @Test
+    void parse_edit_returnsEditCommand() throws FitLoggerException {
+        Command cmd = Parser.parse("edit 1 distance/5", workouts, dictionary);
+        assertTrue(cmd instanceof EditCommand, "Expected EditCommand for edit");
+    }
+
+    @Test
+    void parse_exit_returnsExitCommand() throws FitLoggerException {
+        Command cmd = Parser.parse("exit", workouts, dictionary);
+        assertTrue(cmd instanceof ExitCommand, "Expected ExitCommand for exit");
     }
 
     // ── add-shortcut tests ────────────────────────────────────────────────

@@ -12,7 +12,7 @@ FitLogger is a lightning-fast Command Line Interface (CLI) fitness tracker desig
 4. Open a command terminal (e.g., Command Prompt, PowerShell, or Terminal), navigate to the folder, and run the application using the command: `java -jar fitlogger.jar`
 5. Type `help` to see the list of available commands and start logging!
 
-## Features 
+## Features
 
 ### Exercise shortcut database: `view-database`
 
@@ -92,11 +92,99 @@ Now you have 3 workouts in the list.
 
 > You can correct any field later using `edit <index> <field>/<value>`. Valid fields for lifts: `name`, `weight`, `sets`, `reps`.
 
+---
+
+### Edit an existing workout: `edit`
+
+Updates one field of an existing workout by index.
+
+Format: `edit <index> <field>/<value>`
+
+Examples:
+- `edit 1 distance/4.7`
+- `edit 2 reps/10`
+- `edit 3 name/Tempo Run`
+
+Sample output:
+`Updated workout 2: [Run] Easy Run (Date: 2026-04-02) (Distance: 3.0km, Duration: 3.0 mins)`
+
+Editable fields:
+- For all workouts: `name`, `description`
+- For run workouts: `distance`, `duration`
+- For lift workouts: `weight`, `sets`, `reps`
+
+Important:
+- Use full field names in `edit` commands.
+- Shorthand flags such as `d/` and `t/` are for `add-run`, not `edit`.
+- For example, use `edit 1 distance/5` instead of `edit 1 d/5`.
+
+Invalid input example:
+`edit 1 weight/abc`
+
+Expected error:
+`Invalid weight value: abc`
+
+---
+
+### Delete a workout: `delete`
+
+Deletes one workout by index.
+
+Format: `delete <index>`
+
+Examples:
+- `delete 1`
+- `delete 3`
+
+Sample output:
+`Deleted workout: Bench Press`
+
+Invalid input example:
+`delete abc`
+
+Expected error:
+`Workout index must be a positive integer.`
+
+---
+
+### Search workouts by date: `search-date`
+
+Shows workouts completed on the specified date.
+
+Format: `search-date <YYYY-MM-DD>`
+
+Example:
+- `search-date 2026-03-15`
+
+Sample output when matches exist:
+`Workouts on 2026-03-15:`
+
+Sample output when no matches exist:
+`No workouts found.`
+
+Invalid input example:
+`search-date 2026/03/15`
+
+Expected error:
+`Invalid date format for search-date.`
+
+---
+
+### Exit the app: `exit`
+
+Saves data and closes FitLogger.
+
+Format: `exit`
+
 ## FAQ
 
 **Q**: How do I transfer my data to another computer? 
 
-**A**: {your answer here}
+**A**: Copy the `data/fitlogger.txt` file to the same relative location in the other machine.
+
+**Q**: Why did `edit` fail even though the command format looked correct?
+
+**A**: Check index bounds and field type compatibility. For `edit`, use full field names (e.g., `distance`, `duration`, `weight`). Short forms like `d/5` or `t/20` are not valid for `edit`.
 
 ## Command Summary
 
@@ -108,11 +196,10 @@ Now you have 3 workouts in the list.
 | **View Database** | `view-database` | `view-database` |
 | **Add Shortcut** | `add-shortcut <lift/run> <ID> <name>` | `add-shortcut lift 5 Muscle Up` |
 | **Edit Workout** | `edit <index> <field>/<value>` | `edit 1 weight/85` |
-| **Delete Workout** | `delete <index_or_name>` | `delete 2` OR `delete Tempo Run` |
+| **Delete Workout** | `delete <index>` | `delete 2` |
+| **Search by Date** | `search-date <YYYY-MM-DD>` | `search-date 2026-03-15` |
 | **History** | `history` | `history` |
 | **View Profile** | `profile view` | `profile view` |
 | **Set Profile** | `profile set <field> <value>` | `profile set weight 75` |
 | **Total Mileage** | `view-total-mileage` | `view-total-mileage` |
 | **Exit** | `exit` | `exit` |
-
-* Add todo `todo n/TODO_NAME d/DEADLINE`

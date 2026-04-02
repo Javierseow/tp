@@ -3,113 +3,76 @@ package fitlogger.command;
 import fitlogger.profile.UserProfile;
 import fitlogger.storage.Storage;
 import fitlogger.ui.Ui;
-import fitlogger.workout.Workout;
 import fitlogger.workoutlist.WorkoutList;
 
 /**
- * Deletes a workout from the in-memory workout list by name or by user-facing index.
+ * Deletes a workout from the in-memory workout list by user-facing index.
  *
  * <p>
- * Name matching is case-insensitive and compares against the full workout name. Index matching uses
- * one-based user input (e.g., "3") and maps it to zero-based internal indexing.
+ * Index matching uses one-based user input (e.g., "3") and maps it to zero-based internal indexing.
  * </p>
  */
 public class DeleteCommand extends Command {
-    /** The workout name provided by the user for deletion. */
-    private final String workoutName;
+    /** The workout index provided by the user for deletion. */
+    private final String workoutIndex;
 
     /**
-     * Creates a delete command with the target workout name.
+     * Creates a delete command with the target workout index.
      *
-     * @param workoutName The workout name to delete.
+     * @param workoutIndex The workout index to delete.
      */
-    public DeleteCommand(String workoutName) {
-        this.workoutName = workoutName;
+    public DeleteCommand(String workoutIndex) {
+        this.workoutIndex = workoutIndex;
     }
 
     /**
      * Executes the delete operation and prints feedback to the user.
      *
      * <p>
-     * If no workout name is provided, a usage hint is shown. If a matching workout exists, it is
-     * removed from the list; otherwise, a not-found message is shown.
+      * If the index is missing, non-numeric, non-positive, or out of range, a validation
+      * message is shown and no state is changed.
      * </p>
      *
-     * @param ui      UI component used to display command results.
-     * @param profile
+      * @param storage Storage component used to persist workouts and profile.
+      * @param workouts In-memory workout list to mutate.
+      * @param ui UI component used to display command results.
+      * @param profile User profile saved together with workouts.
      */
     @Override
     public void execute(Storage storage, WorkoutList workouts, Ui ui, UserProfile profile) {
-        if (workoutName == null || workoutName.isBlank()) {
-            ui.showMessage("Please specify a workout to delete. "
-                    + "Usage: delete <WORKOUT_NAME> or delete <index>");
+        if (workoutIndex == null || workoutIndex.isBlank()) {
+            ui.showMessage("Please specify a workout index to delete. Usage: delete <index>");
             return;
         }
 
-        String normalizedName = workoutName.trim();
-        int indexToDelete = findWorkoutIndex(normalizedName, workouts);
+        String normalizedIndex = workoutIndex.trim();
+        final int oneBasedIndex;
 
-        if (indexToDelete != -1) {
-            String deletedWorkoutName = workouts.getWorkoutAtIndex(indexToDelete).getDescription();
-            workouts.deleteWorkout(indexToDelete);
-            ui.showMessage("Deleted workout: " + deletedWorkoutName);
-        } else {
-            ui.showMessage("Workout not found: " + normalizedName);
-        }
-    }
-
-    /**
-     * Resolves the workout to delete from user input.
-     *
-     * <p>
-     * The input is first treated as a one-based index (e.g., {@code 1} maps to internal index
-     * {@code 0}). If it is not a valid integer, the input is treated as a workout name and matched
-     * case-insensitively.
-     * </p>
-     *
-     * @param input Raw user-provided value after the delete command.
-     * @return The zero-based workout index if a match is found; {@code -1} otherwise.
-     */
-    private int findWorkoutIndex(String input, WorkoutList workouts) {
-        Integer oneBasedIndex = parseUserProvidedIndex(input);
-        if (oneBasedIndex != null) {
-            int zeroBasedIndex = oneBasedIndex - 1;
-            if (zeroBasedIndex >= 0 && zeroBasedIndex < workouts.getSize()) {
-                return zeroBasedIndex;
-            }
-            return -1;
-        }
-
-        return findWorkoutIndexByName(input, workouts);
-    }
-
-    /**
-     * Parses a one-based workout index from user input.
-     *
-     * @param input Raw user input that may represent an integer index.
-     * @return Parsed one-based index, or {@code null} if input is not numeric.
-     */
-    private Integer parseUserProvidedIndex(String input) {
         try {
-            return Integer.parseInt(input);
+            oneBasedIndex = Integer.parseInt(normalizedIndex);
         } catch (NumberFormatException exception) {
-            return null;
+            ui.showMessage("Workout index must be a positive integer.");
+            return;
         }
-    }
 
-    /**
-     * Finds a workout by exact description match (case-insensitive).
-     *
-     * @param workoutNameToFind The workout name to search for.
-     * @return The zero-based index of the first matching workout, or {@code -1} if none matches.
-     */
-    private int findWorkoutIndexByName(String workoutNameToFind, WorkoutList workouts) {
-        for (int i = 0; i < workouts.getSize(); i++) {
-            Workout workout = workouts.getWorkoutAtIndex(i);
-            if (workout.getDescription().equalsIgnoreCase(workoutNameToFind)) {
-                return i;
-            }
+        if (oneBasedIndex <= 0) {
+            ui.showMessage("Invalid workout index: " + oneBasedIndex);
+            return;
         }
-        return -1;
+
+        int zeroBasedIndex = oneBasedIndex - 1;
+        if (zeroBasedIndex < 0 || zeroBasedIndex >= workouts.getSize()) {
+            ui.showMessage("Invalid workout index: " + oneBasedIndex);
+            return;
+        }
+
+        String deletedWorkoutName = workouts.getWorkoutAtIndex(zeroBasedIndex).getDescription();
+        workouts.deleteWorkout(zeroBasedIndex);
+        boolean isSaved = storage.saveData(workouts.getWorkouts(), profile);
+        if (!isSaved) {
+            ui.showError("Failed to save workouts to disk. Changes remain only in memory.");
+            return;
+        }
+        ui.showMessage("Deleted workout: " + deletedWorkoutName);
     }
 }

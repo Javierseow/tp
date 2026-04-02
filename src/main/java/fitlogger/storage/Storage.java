@@ -67,7 +67,7 @@ public class Storage {
      *
      * @param workouts The list of {@link Workout} objects to persist.
      */
-    public void saveData(List<Workout> workouts, UserProfile profile) {
+    public boolean saveData(List<Workout> workouts, UserProfile profile) {
         assert workouts != null : "Workout list passed to saveData() must not be null";
 
         File file = new File(FILE_PATH);
@@ -95,8 +95,10 @@ public class Storage {
                 writer.write(workout.toFileFormat());
                 writer.write(System.lineSeparator());
             }
+            return true;
         } catch (IOException e) {
             System.err.println("Error saving workouts: " + e.getMessage());
+            return false;
         }
     }
 

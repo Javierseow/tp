@@ -2,8 +2,9 @@
 
 ## Acknowledgements
 
-{list here sources of all reused/adapted ideas, code, documentation, and third-party libraries -- include 
-links to the original source as well}
+- Java API documentation: https://docs.oracle.com/en/java/javase/17/docs/api/
+- JUnit 5 User Guide: https://junit.org/junit5/docs/current/user-guide/
+- AssertJ documentation: https://assertj.github.io/doc/
 
 ## Design & implementation
 
@@ -38,7 +39,7 @@ At the architecture level, this enhancement follows FitLogger's existing command
 1. `Parser.parse(...)` receives raw user input.
 2. `Parser.parseEdit(...)` validates format and extracts the index, field, and value.
 3. `Parser` returns an `EditCommand` as a `Command`.
-4. The runtime invokes `Command.execute(storage, workouts, ui)` polymorphically.
+4. The runtime invokes `Command.execute(storage, workouts, ui, profile)` polymorphically.
 5. `EditCommand` updates the selected `Workout` and reports the result through `Ui`.
 
 Responsibilities remain clearly separated:
@@ -65,6 +66,7 @@ The command is intentionally defensive:
 - Unknown fields are rejected (`Unknown editable field: ...`).
 - Non-numeric numeric inputs are rejected.
 - Invalid domain values are rejected via `FitLoggerException`.
+- Save failure path is handled explicitly (error is shown, success message is not shown).
 - Name/description edits are validated against reserved storage delimiters (`|` and `/`) to 
 prevent save-file corruption.
 
@@ -104,7 +106,7 @@ extracts the index, field, and value.
 
 **Step 3.** `Parser` returns an `EditCommand` object to the main execution loop.
 
-**Step 4.** During `EditCommand.execute(storage, workouts, ui)`, the command validates index bounds, checks field
+**Step 4.** During `EditCommand.execute(storage, workouts, ui, profile)`, the command validates index bounds, checks field
 compatibility with workout type, and parses/validates the new value.
 
 **Step 5.** The target workout is updated through setter methods, and a success message is printed. If any validation
@@ -116,22 +118,20 @@ fails, an error message is shown instead.
 
 #### Purpose and user value
 
-`DeleteCommand` allows users to remove workouts by index or by name.
-This supports both quick positional deletion and direct name-based deletion,
-depending on whether users remember list order or workout name.
+`DeleteCommand` allows users to remove workouts by index.
+This keeps deletion aligned with the numbered workout list shown to users.
 
 Supported formats:
 - `delete <index>`
-- `delete <workout_name>`
 
 #### Design overview
 
 The command is intentionally simple and cohesive:
 
 1. Parser identifies the `delete` command and passes the raw argument string.
-2. `DeleteCommand` stores only the user-supplied target text.
-3. During execution, the command resolves the target as index-or-name.
-4. If found, workout is removed from `WorkoutList`; otherwise, user sees not-found feedback.
+2. `DeleteCommand` stores the user-supplied index text.
+3. During execution, the command validates the text as a positive one-based index.
+4. If the index is valid, the workout is removed from `WorkoutList`; otherwise, user sees validation feedback.
 
 This design keeps parsing and command behavior focused while preserving compatibility with the existing pipeline.
 
@@ -141,50 +141,51 @@ This design keeps parsing and command behavior focused while preserving compatib
 
 1. Empty input check:
 	- If blank, show usage guidance and return early.
-2. Target resolution (`findWorkoutIndex(...)`):
-	- First, attempt numeric parsing (`parseUserProvidedIndex`).
-	- If numeric, convert one-based user index to zero-based list index.
-	- If non-numeric, perform case-insensitive full-name match.
+2. Index parsing and validation:
+  - Trim the input and parse it as a positive integer.
+  - If parsing fails, show `Workout index must be a positive integer.`
+  - If the parsed index is less than 1, show `Invalid workout index: <index>`.
 3. Deletion:
-	- On match, delete the workout and show `Deleted workout: <name>`.
-	- On miss, show `Workout not found: <input>`.
+  - Convert the one-based index to a zero-based list index.
+  - If the zero-based index is out of range, show `Invalid workout index: <index>`.
+  - Otherwise, delete the workout and show `Deleted workout: <name>`.
 
 This approach avoids ambiguity and keeps deletion behavior predictable.
 
 #### Edge cases handled
 
 - Blank target text.
-- Out-of-range numeric index (e.g., 0 or larger than current list size).
-- Non-numeric text that does not match any workout name.
-- Case-insensitive name matching for better usability.
+- Non-numeric text.
+- Zero or negative indices.
+- Out-of-range indices larger than the current workout list size.
 
 #### Testing strategy
 
 `DeleteCommandTest` verifies:
 
-- Name-based deletion success.
 - Index-based deletion success (one-based input behavior).
 - Blank-input usage message.
-- Not-found message for missing name.
-- Not-found message for invalid numeric index.
+- Rejection of non-numeric input.
+- Rejection of zero as an invalid index.
+- Save is attempted only after a valid deletion.
+- Save failure path shows an error and suppresses deletion success message.
 
-This ensures both deletion flows (index and name) remain stable and regressions are caught early.
+This ensures the index-only deletion flow remains stable and regressions are caught early.
 
 #### Example usage scenario
 
 Given below is an example scenario of how `DeleteCommand` is processed.
 
-**Step 1.** The user enters a delete command, for example `delete 3` or `delete Tempo Run`.
+**Step 1.** The user enters a delete command, for example `delete 3`.
 
 **Step 2.** `Parser.parse(...)` identifies the `delete` command and creates a `DeleteCommand` with the raw argument.
 
-**Step 3.** In `DeleteCommand.execute(storage, workouts, ui)`, the command first checks for empty input.
+**Step 3.** In `DeleteCommand.execute(storage, workouts, ui, profile)`, the command first checks for empty input.
 
-**Step 4.** The command resolves the target by trying numeric index parsing first, then case-insensitive name matching
-if parsing fails.
+**Step 4.** The command parses the raw argument as a positive one-based index and rejects invalid input.
 
-**Step 5.** If a target workout is found, it is removed from `WorkoutList` and the user sees a deletion confirmation.
-If no target is found, the user sees a not-found message.
+**Step 5.** If the index is valid and within range, the workout is removed from `WorkoutList` and the user sees a deletion confirmation.
+Otherwise, the user sees an index validation message.
 
 ---
 
@@ -216,8 +217,8 @@ This feature follows FitLogger's existing command pipeline:
 2. `parseAddLift(...)` validates the input format, extracts the name and numeric fields,
    and constructs a `StrengthWorkout` object.
 3. The `StrengthWorkout` is wrapped in an `AddWorkoutCommand` and returned to the main loop.
-4. The main loop calls `Command.execute(storage, workouts, ui)` polymorphically.
-5. `AddWorkoutCommand` adds the workout to `WorkoutList` and prints a confirmation via `Ui`.
+4. The main loop calls `Command.execute(storage, workouts, ui, profile)` polymorphically.
+5. `AddWorkoutCommand` adds the workout to `WorkoutList`, saves it, and prints confirmation via `Ui`.
 
 Responsibilities remain clearly separated:
 - `Parser` handles syntax validation and tokenization.
@@ -264,7 +265,9 @@ the command stateless until it runs.
 `AddWorkoutCommand.execute(...)` performs:
 
 1. Call `workouts.addWorkout(workoutToAdd)`.
-2. Print confirmation via `ui.showMessage(...)` and `ui.printWorkout(...)`.
+2. Persist using `storage.saveData(...)`.
+3. On save failure, show an error and return.
+4. On success, print confirmation via `ui.showMessage(...)` and `ui.printWorkout(...)`.
 
 #### Storage format
 
@@ -567,8 +570,6 @@ argument passing, keeping the contract clear.
 
 An assertion in `UpdateProfileCommand`'s constructor enforces this:
 
-java
-
 ``` java
 assert newHeight == -1 || newHeight >= 0 : "Height is invalid";
 assert newWeight == -1 || newWeight >= 0 : "Weight is invalid";
@@ -679,6 +680,49 @@ This means numeric IDs and full names are both accepted with no special flag nee
 
 ---
 
+### Enhancement 8: `search-date` Command
+
+#### Purpose and user value
+
+`search-date` lets users quickly filter workouts done on a specific date.
+This avoids manual scanning of the entire history when checking day-level consistency.
+
+Command format:
+```
+search-date <YYYY-MM-DD>
+```
+
+#### Design overview
+
+1. `Parser.parse(...)` dispatches `search-date` to `parseSearchDate(...)`.
+2. `parseSearchDate(...)` validates date presence and format (`LocalDate.parse`).
+3. A `SearchDateCommand` is returned and executed polymorphically.
+4. `SearchDateCommand.execute(...)` scans `WorkoutList` and collects matching dates.
+5. `Ui.showWorkoutList(...)` prints matching workouts, or `No workouts found.` for empty results.
+
+#### Validation and edge cases
+
+- Missing date throws `FitLoggerException` with usage hint.
+- Invalid date format throws `FitLoggerException` with usage hint.
+- Empty result set is handled cleanly in UI.
+
+---
+
+### Enhancement 9: Save Failure Handling in Commands
+
+#### Purpose and user value
+
+This enhancement prevents silent save failures by making persistence outcomes explicit.
+If save fails, the app now shows clear error messages instead of always implying success.
+
+#### Design overview
+
+1. `Storage.saveData(...)` returns `boolean` (`true` for success, `false` on `IOException`).
+2. `AddWorkoutCommand`, `DeleteCommand`, `EditCommand`, and `ExitCommand` check that result.
+3. On failure, commands show `ui.showError(...)` and skip success-only messages.
+
+---
+
 ### Notes for team writeups
 
 ### Command Architecture
@@ -698,14 +742,9 @@ during execution (like `FitLoggerException`) can be caught and handled globally 
 
 #### Components and Interaction
 The Command architecture consists of three primary elements:
-1.  **`Command` (Abstract Class):** The base template for all actions. It defines the 
-`execute(Storage, WorkoutList, Ui)` method, ensuring every command has access to the necessary system components.
-2.  **Concrete Implementations:** Subclasses like `AddWorkoutCommand` 
-and `DeleteCommand` store specific user-inputted states—such as a `Workout` 
-object or a name `String`—internally until execution.
-3.  **Polymorphic Execution:** The `FitLogger#run()` method maintains a 
-"Parse-then-Execute" loop. It treats all returned objects as the abstract `Command` 
-type, invoking `isExit()` to determine if the application should terminate.
+1.  **`Command` (Abstract Class):** The base template for all actions. It defines the `execute(Storage, WorkoutList, Ui, UserProfile)` method, ensuring every command has access to the necessary system components.
+2.  **Concrete Implementations:** Subclasses like `AddWorkoutCommand` and `DeleteCommand` store specific user-inputted states—such as a `Workout` object or an index `String`—internally until execution.
+3.  **Polymorphic Execution:** The `FitLogger#run()` method maintains a "Parse-then-Execute" loop. It treats all returned objects as the abstract `Command` type, invoking `isExit()` to determine if the application should terminate.
 
 Unlike "ready-to-run" implementations, FitLogger's commands are **stateless regarding the system** 
 but **stateful regarding user input**. They are instantiated with arguments by the `Parser` but only gain 
@@ -724,8 +763,8 @@ executable `Command` objects described above.
 The parsing logic is centralized in the `Parser#parse()` method, following a two-stage process:
 1.  **Tokenization:** The input string is split into a `commandWord` and `arguments` using the `splitInput` 
 helper method.
-**Command Dispatch:** A `switch` block routes the `commandWord` to the appropriate command constructor 
-2. (e.g., `DeleteCommand`, `ExitCommand`) or specialized sub-parser methods (e.g., `parseAddRun`, `parseAddLift`).
+2.  **Command Dispatch:** A `switch` block routes the `commandWord` to the appropriate command constructor 
+  (e.g., `DeleteCommand`, `ExitCommand`) or specialized sub-parser methods (e.g., `parseAddRun`, `parseAddLift`).
 
 The following sequence diagram illustrates the internal logic of the `Parser` when handling `add-run` or 
 `delete` commands:
