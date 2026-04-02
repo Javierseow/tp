@@ -10,7 +10,7 @@ participant ":Ui" as Ui
 -> Main : "add-lift Bench w/80 s/3 r/8"
 activate Main
 
-Main -> Parser : parse("add-lift...", workouts, storage)
+Main -> Parser : parse("add-lift...", workouts, dictionary)
 activate Parser
 
 Parser -> AddWorkoutCommand : new AddWorkoutCommand(\n  new StrengthWorkout("Bench", 80.0, 3, 8, date))
@@ -18,11 +18,13 @@ Parser -> AddWorkoutCommand : new AddWorkoutCommand(\n  new StrengthWorkout("Ben
 Parser --> Main : command
 deactivate Parser
 
-Main -> AddWorkoutCommand : execute(storage, workouts, ui)
+Main -> AddWorkoutCommand : execute(storage, workouts, ui, profile)
 activate AddWorkoutCommand
 
-AddWorkoutCommand -> WorkoutList : addWorkout(workout)
-AddWorkoutCommand -> Ui : showMessage(...)
+AddWorkoutCommand -> WorkoutList : addWorkout(workoutToAdd)
+AddWorkoutCommand -> Ui : showMessage("Got it. I've added this workout:")
+AddWorkoutCommand -> Ui : printWorkout(workoutToAdd)
+AddWorkoutCommand -> Ui : showMessage("Now you have " + size + " workouts in the list.")
 
 AddWorkoutCommand --> Main
 deactivate AddWorkoutCommand

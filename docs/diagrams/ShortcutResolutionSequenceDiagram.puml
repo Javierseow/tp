@@ -1,0 +1,39 @@
+@startuml
+hide footbox
+
+participant ":FitLogger" as Main
+participant ":Parser" as Parser
+participant ":ExerciseDictionary" as Dict
+participant "command:AddWorkoutCommand" as Cmd
+participant ":WorkoutList" as WorkoutList
+participant ":Ui" as Ui
+
+-> Main : "add-lift 2 w/80 s/3 r/8"
+activate Main
+
+Main -> Parser : parse("add-lift 2...", workouts, dictionary)
+activate Parser
+
+Parser -> Dict : getLiftName(2)
+activate Dict
+Dict --> Parser : "Bench Press"
+deactivate Dict
+
+Parser -> Cmd : new AddWorkoutCommand(\n  new StrengthWorkout("Bench Press", 80.0, 3, 8, date))
+
+Parser --> Main : command
+deactivate Parser
+
+Main -> Cmd : execute(storage, workouts, ui, profile)
+activate Cmd
+
+Cmd -> WorkoutList : addWorkout(workoutToAdd)
+Cmd -> Ui : showMessage("Got it. I've added this workout:")
+Cmd -> Ui : printWorkout(workoutToAdd)
+Cmd -> Ui : showMessage("Now you have " + size + " workouts in the list.")
+
+Cmd --> Main
+deactivate Cmd
+
+deactivate Main
+@enduml

@@ -1,0 +1,43 @@
+@startuml
+hide circle
+skinparam classAttributeIconSize 0
+
+abstract class Command {
+    + execute(Storage, WorkoutList, Ui, UserProfile): void
+    + isExit(): boolean
+}
+
+class AddShortcutCommand {
+    - type: String
+    - id: int
+    - name: String
+    - dictionary: ExerciseDictionary
+    + execute(Storage, WorkoutList, Ui, UserProfile): void
+}
+
+class ViewDatabaseCommand {
+    - dictionary: ExerciseDictionary
+    + execute(Storage, WorkoutList, Ui, UserProfile): void
+}
+
+class Storage {
+    - dictionary: ExerciseDictionary
+    + setDictionary(ExerciseDictionary): void
+    + saveData(List<Workout>, UserProfile): void
+}
+
+class ExerciseDictionary {
+    - liftDictionary: TreeMap<Integer, String>
+    - runDictionary: TreeMap<Integer, String>
+    + getLiftName(int): String
+    + getRunName(int): String
+    + addLiftShortcut(int, String): void
+    + addRunShortcut(int, String): void
+}
+
+Command <|-- AddShortcutCommand
+Command <|-- ViewDatabaseCommand
+AddShortcutCommand --> ExerciseDictionary : mutates
+ViewDatabaseCommand --> ExerciseDictionary : reads
+Storage --> ExerciseDictionary : persists
+@enduml

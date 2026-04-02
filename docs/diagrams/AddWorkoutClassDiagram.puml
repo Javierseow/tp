@@ -8,7 +8,7 @@ abstract class Workout {
     + getDescription(): String
     + getDate(): LocalDate
     + setDescription(String): void
-    + toFileFormat(): String
+    + {abstract} toFileFormat(): String
     + toString(): String
 }
 
@@ -35,7 +35,7 @@ class StrengthWorkout {
 
 class AddWorkoutCommand {
     - workoutToAdd: Workout
-    + execute(Storage, WorkoutList, Ui): void
+    + execute(Storage, WorkoutList, Ui, UserProfile): void
 }
 
 Workout <|-- RunWorkout

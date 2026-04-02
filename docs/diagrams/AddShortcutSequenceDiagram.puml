@@ -1,0 +1,37 @@
+@startuml
+hide footbox
+
+participant ":FitLogger" as Main
+participant ":Parser" as Parser
+participant "command:AddShortcutCommand" as Cmd
+participant ":ExerciseDictionary" as Dict
+participant ":Ui" as Ui
+participant ":Storage" as Storage
+
+-> Main : "add-shortcut lift 5 Romanian Deadlift"
+activate Main
+
+Main -> Parser : parse("add-shortcut...", workouts, dictionary)
+activate Parser
+
+Parser -> Cmd : new AddShortcutCommand(\n  "lift", 5, "Romanian Deadlift", dictionary)
+
+Parser --> Main : command
+deactivate Parser
+
+Main -> Cmd : execute(storage, workouts, ui, profile)
+activate Cmd
+
+Cmd -> Dict : addLiftShortcut(5, "Romanian Deadlift")
+Cmd -> Ui : showMessage("Success! Added strength shortcut: [L5] -> Romanian Deadlift")
+
+Cmd -> Storage : saveData(workouts, profile)
+activate Storage
+Storage --> Cmd
+deactivate Storage
+
+Cmd --> Main
+deactivate Cmd
+
+deactivate Main
+@enduml

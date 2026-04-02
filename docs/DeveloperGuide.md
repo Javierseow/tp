@@ -228,7 +228,7 @@ Responsibilities remain clearly separated:
 
 The class diagram below shows the inheritance structure underpinning this feature.
 
-![Add Lift Class Diagram](images/AddLiftClassDiagram.png)
+![AddWorkoutClassDiagram.png](images/AddWorkoutClassDiagram.png)
 
 `StrengthWorkout` extends the abstract `Workout` base class, which also serves as the
 parent for `RunWorkout`. This polymorphic design allows `WorkoutList` to store both types
@@ -241,7 +241,7 @@ both `add-lift` and `add-run` — no separate `AddLiftCommand` class is needed.
 The sequence diagram below shows how a lift is logged when the user enters
 `add-lift Bench w/80 s/3 r/8`.
 
-![Add Lift Sequence Diagram](images/AddLiftSequenceDiagram.png)
+![AddLiftSequenceDiagram.png](images/AddLiftSequenceDiagram.png)
 
 The `StrengthWorkout` object is created inline during parsing and passed directly into
 `AddWorkoutCommand`. The command does not store a reference to `Parser` or `Storage` —
@@ -593,6 +593,92 @@ test and extend independently.
 
 ---
 
+### Enhancement 7: Exercise Shortcut System (`ExerciseDictionary`, `AddShortcutCommand`, and `ViewDatabaseCommand`)
+
+#### Purpose and user value
+
+The exercise shortcut system lets users log workouts by typing a short numeric ID instead of the full exercise name every time. For example, `add-lift 2 w/80 s/3 r/8` resolves to `Bench Press` via the database, avoiding repetitive typing.
+
+The system has three parts:
+- `ExerciseDictionary`: the in-memory data model storing ID-to-name mappings for lifts and runs.
+- `AddShortcutCommand`: lets users extend the database with their own shortcuts at runtime.
+- `ViewDatabaseCommand`: lets users see what shortcuts are currently available.
+
+The database ships with four default lift shortcuts and three default run shortcuts. Custom shortcuts added via `add-shortcut` are permanently persisted to the save file alongside the user's profile and workout history.
+
+#### Class-level design
+
+The class diagram below shows the relationships between the components.
+
+![Add Shortcut Class Diagram](images/AddShortcutClassDiagram.png)
+
+`ExerciseDictionary` is the shared data model. `AddShortcutCommand` mutates it; `ViewDatabaseCommand` reads from it. Both extend the abstract `Command` base class, keeping them consistent with the rest of FitLogger's command pipeline.
+
+`ExerciseDictionary` uses two `TreeMap<Integer, String>` fields; one for lifts, one for runs. `TreeMap` was chosen over `HashMap` so entries are always displayed in ascending ID order by `ViewDatabaseCommand`.
+
+#### Component-level behavior
+
+**`ExerciseDictionary`** exposes:
+
+- `getLiftName(int id)` / `getRunName(int id)`: returns the name for a given ID, or `null` if not found.
+- `addLiftShortcut(int id, String name)` / `addRunShortcut(int id, String name)`: inserts or overwrites an entry.
+- `getLiftShortcuts()` / `getRunShortcuts()`: returns the full map, used by `Ui.showExerciseDatabase(...)`.
+
+**`Parser.parseAddShortcut(...)`** performs:
+
+1. Split arguments into three parts: `type`, `id`, and `name` using `splitInput(arguments, " ", 3)`.
+2. Validate `type` is `"lift"` or `"run"`.
+3. Parse `id` as a positive integer.
+4. Validate `name` against reserved storage delimiters (`|` and `/`).
+5. Return `new AddShortcutCommand(type, id, name, dictionary)`.
+
+**`AddShortcutCommand.execute(...)`** performs:
+
+1. Call `dictionary.addLiftShortcut(id, name)` or `dictionary.addRunShortcut(id, name)` based on `type`.
+2. Display a confirmation via `Ui`.
+
+The sequence diagram below shows this flow for `add-shortcut lift 5 Romanian Deadlift`.
+
+![Add Shortcut Sequence Diagram](images/AddShortcutSequenceDiagram.png)
+
+#### Shortcut resolution in `add-lift` and `add-run`
+
+Using a shortcut ID in `add-lift` (e.g. `add-lift 2 w/80 s/3 r/8`) triggers a resolution step inside `Parser.parseAddLift(...)` before the `StrengthWorkout` is created. The sequence diagram below shows this flow.
+
+![Shortcut Resolution Sequence Diagram](images/ShortcutResolutionSequenceDiagram.png)
+
+The resolution logic is a try-catch around `Integer.parseInt(name)`:
+- If parsing succeeds, `dictionary.getLiftName(id)` is called. A `null` return means the ID does not exist, and a `FitLoggerException` is thrown pointing the user to `view-database`.
+- If `NumberFormatException` is thrown, the token is treated as a plain-text name and used as-is.
+
+This means numeric IDs and full names are both accepted with no special flag needed, and the resolution is entirely a parsing concern — `StrengthWorkout` and `AddWorkoutCommand` are unchanged.
+
+#### Validation and error handling
+
+| Input error | Error message shown |
+|---|---|
+| Missing arguments | `Missing arguments.` + usage hint |
+| Fewer than 3 parts | `Invalid format.` + usage hint |
+| Type not `lift` or `run` | `Shortcut type must be 'lift' or 'run'.` |
+| Non-numeric ID | `Shortcut ID must be a number.` |
+| ID ≤ 0 | `Shortcut ID must be a positive number.` |
+| Name contains `\|` or `/` | `Shortcut name must not contain '\|' or '/'` |
+| ID not found in database | `Shortcut ID [n] does not exist. Type 'view-database' to see available shortcuts.` |
+
+#### Design considerations
+
+**Aspect: Where to mutate the dictionary**
+
+- **Current choice: mutate in `AddShortcutCommand.execute(...)`**: Consistent with all other commands. Parsing is side-effect-free; state changes only happen at execution time. This makes `Parser` easier to test in isolation.
+- **Alternative: mutate in `Parser.parseAddShortcut(...)`**: Fewer classes, but parsing would have observable side effects. This breaks the separation of concerns and makes unit testing harder.
+
+**Aspect: Dictionary persistence**
+
+- **Current choice: persist shortcuts to the save file using a dedicated row format (`S | <type> | <id> | <name>`)**: Custom shortcuts survive app restarts, giving users a permanent, personalized database. By injecting the dictionary into Storage via setter injection, we bypassed the need to modify the base Command signature, preserving the existing architecture.
+- **Alternative: in-memory only, rebuilt from defaults on launch**: Simple and predictable. The database state is always known at startup.
+
+---
+
 ### Notes for team writeups
 
 ### Command Architecture
@@ -666,11 +752,11 @@ file corruption during save/load operations.
 ## Product scope
 ### Target user profile
 
-{Describe the target user profile}
+A student or hybrid athlete who prefers desktop CLI applications over mobile GUI apps. They are comfortable typing fast, value keyboard-centric workflows, and want a unified platform to track both strength training (lifts) and cardiovascular training (runs) without navigating through complex menus.
 
 ### Value proposition
 
-{Describe the value proposition: what problem does it solve?}
+FitLogger provides a blazingly fast, distraction-free environment to log mixed-modality workouts. It solves the friction of traditional fitness apps by allowing users to log complex workouts (like a 5-set bench press or a 10km tempo run) in a single line of text, complete with a customizable shortcut database to speed up daily data entry.
 
 ## User Stories
 
@@ -681,7 +767,10 @@ file corruption during save/load operations.
 
 ## Non-Functional Requirements
 
-{Give non-functional requirements}
+1. **Compatibility:** The system should work seamlessly on any mainstream operating system (Windows, Linux, macOS) that has Java 17 or above installed.
+2. **Performance:** The system should respond to user commands (parsing, execution, and UI feedback) within 100 milliseconds to maintain a snappy CLI experience.
+3. **Robustness:** The application should handle corrupted or manually modified save files (`data/fitlogger.txt`) gracefully by skipping malformed lines without crashing, ensuring valid historical data is still loaded.
+4. **Data Portability:** The persistence mechanism must use a human-readable text format, allowing users to easily back up, read, or migrate their data without specialized software.
 
 ## Glossary
 
