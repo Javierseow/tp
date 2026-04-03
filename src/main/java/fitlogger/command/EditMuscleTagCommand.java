@@ -1,6 +1,5 @@
 package fitlogger.command;
 
-import fitlogger.command.Command;
 import fitlogger.exercisedictionary.ExerciseDictionary;
 import fitlogger.musclegroup.MuscleGroup;
 

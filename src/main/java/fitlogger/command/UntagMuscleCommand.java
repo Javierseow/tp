@@ -15,6 +15,6 @@ public class UntagMuscleCommand extends EditMuscleTagCommand {
     @Override
     public void execute(Storage storage, WorkoutList workouts, Ui ui, UserProfile profile) {
         dictionary.untagMuscles(id, muscle);
-        ui.showMessage("Removed " + muscle + " from lift ID: " + id);
+        ui.showMessage("Removed " + muscle.displayName() + " from lift ID: " + id);
     }
 }

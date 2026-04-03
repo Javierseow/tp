@@ -7,6 +7,7 @@ import fitlogger.command.DeleteCommand;
 import fitlogger.command.EditCommand;
 import fitlogger.command.ExitCommand;
 import fitlogger.command.HelpCommand;
+import fitlogger.command.LiftMuscleGroupsCommand;
 import fitlogger.command.SearchDateCommand;
 import fitlogger.command.TagMuscleCommand;
 import fitlogger.command.TrainMuscleCommand;
@@ -52,8 +53,11 @@ public class Parser {
         case "train":
             return parseTrainMuscle(arguments, dictionary);
 
-        case "muscle-groups":
+        case "view-muscle-groups":
             return new ViewMuscleGroupCommand();
+
+        case "muscle-groups":
+            return parseLiftMuscleGroup(arguments, dictionary);
 
         case "tag-muscle":
             return parseTagMuscle(arguments, dictionary, true);
@@ -351,7 +355,7 @@ public class Parser {
         String muscleGroup = arguments.trim().toUpperCase().replace(' ', '_');
         if (!MuscleGroup.isValid(muscleGroup)) {
             throw new FitLoggerException("Invalid muscle group.\n" +
-                    "Type 'muscle-groups' to see all available muscle groups");
+                    "Type 'view-muscle-groups' to see all available muscle groups");
         }
         return new TrainMuscleCommand(MuscleGroup.valueOf(muscleGroup), dictionary);
     }
@@ -376,13 +380,30 @@ public class Parser {
             String muscleGroup = parts[1].trim().toUpperCase().replace(' ', '_');
             if (!MuscleGroup.isValid(muscleGroup)) {
                 throw new FitLoggerException("Muscle group does not exist in database.\n"+
-                        "Perform 'muscle-groups' for all available shortcuts");
+                        "Perform 'view-muscle-groups' for all available shortcuts");
             }
             if (isTag) {
                 return new TagMuscleCommand(id, MuscleGroup.valueOf(muscleGroup), dictionary);
             }
             return new UntagMuscleCommand(id, MuscleGroup.valueOf(muscleGroup), dictionary);
-            //assert somewhere that id is not negative (ensured by the shortcut id)
+        } catch (NumberFormatException e) {
+            throw new FitLoggerException("Input a valid shortcut ID.\n" +
+                    "Perform 'view-database' for all available shortcuts");
+        }
+    }
+
+    private static Command parseLiftMuscleGroup(String arguments, ExerciseDictionary dictionary)
+            throws FitLoggerException {
+        if (arguments.isBlank()) {
+            throw new FitLoggerException("Missing arguments.\nUsage: muscle-groups <shortcut_ID>");
+        }
+        try {
+            int id = Integer.parseInt(arguments.trim());
+            if (!dictionary.getLiftShortcuts().containsKey(id)) {
+                throw new FitLoggerException("Shortcut does not exist in database.\n" +
+                        "Perform 'view-database' for all available shortcuts");
+            }
+            return new LiftMuscleGroupsCommand(id, dictionary);
         } catch (NumberFormatException e) {
             throw new FitLoggerException("Input a valid shortcut ID.\n" +
                     "Perform 'view-database' for all available shortcuts");
