@@ -8,7 +8,9 @@ import fitlogger.command.EditCommand;
 import fitlogger.command.ExitCommand;
 import fitlogger.command.HelpCommand;
 import fitlogger.command.SearchDateCommand;
+import fitlogger.command.TagMuscleCommand;
 import fitlogger.command.TrainMuscleCommand;
+import fitlogger.command.UntagMuscleCommand;
 import fitlogger.command.UpdateProfileCommand;
 import fitlogger.command.ViewDatabaseCommand;
 import fitlogger.command.ViewHistoryCommand;
@@ -52,6 +54,12 @@ public class Parser {
 
         case "muscle-groups":
             return new ViewMuscleGroupCommand();
+
+        case "tag-muscle":
+            return parseTagMuscle(arguments, dictionary, true);
+
+        case "untag-muscle":
+            return parseTagMuscle(arguments, dictionary, false);
 
         case "profile":
             return parseProfile(arguments);
@@ -346,6 +354,39 @@ public class Parser {
                     "Type 'muscle-groups' to see all available muscle groups");
         }
         return new TrainMuscleCommand(MuscleGroup.valueOf(muscleGroup), dictionary);
+    }
+
+    private static Command parseTagMuscle(String arguments, ExerciseDictionary dictionary, boolean isTag)
+            throws FitLoggerException {
+        String usage = (isTag ? "tag" : "untag") + "-muscle <shortcut-ID> <muscle-group>";
+        if (arguments.isBlank()) {
+            throw new FitLoggerException("Missing arguments.\nUsage: " + usage);
+        }
+        String[] parts = splitInput(arguments, " ", 2);
+        if (parts.length < 2) {
+            throw new FitLoggerException("Invalid format.\nUsage: " + usage);
+        }
+
+        try {
+            int id = Integer.parseInt(parts[0].trim());
+            if (!dictionary.getLiftShortcuts().containsKey(id)) {
+                throw new FitLoggerException("Shortcut does not exist in database.\n" +
+                        "Perform 'view-database' for all available shortcuts");
+            }
+            String muscleGroup = parts[1].trim().toUpperCase().replace(' ', '_');
+            if (!MuscleGroup.isValid(muscleGroup)) {
+                throw new FitLoggerException("Muscle group does not exist in database.\n"+
+                        "Perform 'muscle-groups' for all available shortcuts");
+            }
+            if (isTag) {
+                return new TagMuscleCommand(id, MuscleGroup.valueOf(muscleGroup), dictionary);
+            }
+            return new UntagMuscleCommand(id, MuscleGroup.valueOf(muscleGroup), dictionary);
+            //assert somewhere that id is not negative (ensured by the shortcut id)
+        } catch (NumberFormatException e) {
+            throw new FitLoggerException("Input a valid shortcut ID.\n" +
+                    "Perform 'view-database' for all available shortcuts");
+        }
     }
 
     /**
