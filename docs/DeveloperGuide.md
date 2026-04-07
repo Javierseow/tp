@@ -47,6 +47,14 @@ Responsibilities remain clearly separated:
 - Command handles *execution logic and field dispatch*.
 - Workout classes enforce *domain invariants* through setter validation.
 
+#### UML diagrams
+
+Class diagram source:
+- [EditCommandClassDiagram.puml](diagrams/EditCommandClassDiagram.puml)
+
+Sequence diagram source:
+- [EditCommandSequenceDiagram.puml](diagrams/EditCommandSequenceDiagram.puml)
+
 #### Component-level behavior
 
 `EditCommand.execute(...)` performs the following steps:
@@ -134,6 +142,14 @@ The command is intentionally simple and cohesive:
 4. If the index is valid, the workout is removed from `WorkoutList`; otherwise, user sees validation feedback.
 
 This design keeps parsing and command behavior focused while preserving compatibility with the existing pipeline.
+
+#### UML diagrams
+
+Class diagram source:
+- [DeleteCommandClassDiagram.puml](diagrams/DeleteCommandClassDiagram.puml)
+
+Sequence diagram source:
+- [DeleteCommandSequenceDiagram.puml](diagrams/DeleteCommandSequenceDiagram.puml)
 
 #### Component-level behavior
 
@@ -700,6 +716,14 @@ search-date <YYYY-MM-DD>
 4. `SearchDateCommand.execute(...)` scans `WorkoutList` and collects matching dates.
 5. `Ui.showWorkoutList(...)` prints matching workouts, or `No workouts found.` for empty results.
 
+#### UML diagrams
+
+Class diagram source:
+- [SearchDateCommandClassDiagram.puml](diagrams/SearchDateCommandClassDiagram.puml)
+
+Sequence diagram source:
+- [SearchDateCommandSequenceDiagram.puml](diagrams/SearchDateCommandSequenceDiagram.puml)
+
 #### Validation and edge cases
 
 - Missing date throws `FitLoggerException` with usage hint.
@@ -720,6 +744,14 @@ If save fails, the app now shows clear error messages instead of always implying
 1. `Storage.saveData(...)` returns `boolean` (`true` for success, `false` on `IOException`).
 2. `AddWorkoutCommand`, `DeleteCommand`, `EditCommand`, and `ExitCommand` check that result.
 3. On failure, commands show `ui.showError(...)` and skip success-only messages.
+
+#### UML diagrams
+
+Class diagram source:
+- [ExitCommandClassDiagram.puml](diagrams/ExitCommandClassDiagram.puml)
+
+Sequence diagram source:
+- [ExitCommandSequenceDiagram.puml](diagrams/ExitCommandSequenceDiagram.puml)
 
 ---
 

@@ -1,0 +1,32 @@
+@startuml
+skinparam classAttributeIconSize 0
+
+abstract class Command {
+	+execute(storage, workouts, ui, profile)
+}
+
+class SearchDateCommand {
+	-targetDate : LocalDate
+	+execute(storage, workouts, ui, profile)
+}
+
+class WorkoutList {
+	+getSize()
+	+getWorkoutAtIndex(index)
+}
+
+class Workout {
+	+getDate() : LocalDate
+}
+
+class Ui {
+	+showMessage(message)
+	+showLine()
+	+showWorkoutList(workouts)
+}
+
+Command <|-- SearchDateCommand
+SearchDateCommand ..> WorkoutList
+SearchDateCommand ..> Workout
+SearchDateCommand ..> Ui
+@enduml

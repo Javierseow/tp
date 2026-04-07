@@ -1,0 +1,35 @@
+@startuml
+skinparam classAttributeIconSize 0
+
+abstract class Command {
+	+execute(storage, workouts, ui, profile)
+	+isExit() : boolean
+}
+
+class ExitCommand {
+	+execute(storage, workouts, ui, profile)
+	+isExit() : boolean
+}
+
+class WorkoutList {
+	+getWorkouts()
+}
+
+class Storage {
+	+saveData(workouts, profile) : boolean
+}
+
+class Ui {
+	+showMessage(message)
+	+showError(message)
+	+showGoodbye()
+}
+
+class UserProfile
+
+Command <|-- ExitCommand
+ExitCommand ..> Storage
+ExitCommand ..> WorkoutList
+ExitCommand ..> Ui
+ExitCommand ..> UserProfile
+@enduml

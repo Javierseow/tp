@@ -1,0 +1,38 @@
+@startuml
+hide footbox
+
+actor User
+participant ":FitLogger" as Main
+participant ":Parser" as Parser
+participant "command:SearchDateCommand" as Cmd
+participant ":WorkoutList" as Workouts
+participant ":Workout" as Workout
+participant ":Ui" as Ui
+
+User -> Main : search-date 2026-03-15
+activate Main
+
+Main -> Parser : parse("search-date 2026-03-15", workouts, dictionary)
+activate Parser
+Parser --> Main : new SearchDateCommand(2026-03-15)
+deactivate Parser
+
+Main -> Cmd : execute(storage, workouts, ui, profile)
+activate Cmd
+
+loop for each workout in list
+	Cmd -> Workouts : getWorkoutAtIndex(i)
+	Cmd -> Workout : getDate()
+	Cmd -> Cmd : compare targetDate.equals(date)
+	Cmd -> Cmd : add match to matchingWorkouts (if equal)
+end
+
+Cmd -> Ui : showMessage("Workouts on 2026-03-15:")
+Cmd -> Ui : showLine()
+Cmd -> Ui : showWorkoutList(matchingWorkouts)
+Cmd -> Ui : showLine()
+
+Cmd --> Main
+deactivate Cmd
+deactivate Main
+@enduml

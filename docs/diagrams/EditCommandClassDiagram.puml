@@ -1,0 +1,63 @@
+@startuml
+skinparam classAttributeIconSize 0
+
+abstract class Command {
+	+execute(storage, workouts, ui, profile)
+}
+
+class EditCommand {
+	-oneBasedIndex : int
+	-fieldName : String
+	-newValue : String
+	+execute(storage, workouts, ui, profile)
+}
+
+class WorkoutList {
+	+getSize()
+	+getWorkoutAtIndex(index)
+	+getWorkouts()
+}
+
+class Workout {
+	+setDescription(value)
+}
+
+class StrengthWorkout {
+	+setWeight(value)
+	+setSets(value)
+	+setReps(value)
+}
+
+class RunWorkout {
+	+setDistance(value)
+	+setDurationMinutes(value)
+}
+
+class Storage {
+	+saveData(workouts, profile) : boolean
+}
+
+class Ui {
+	+showMessage(message)
+	+showError(message)
+}
+
+class Parser {
+	+validateNoStorageDelimiters(value, fieldName)
+}
+
+class UserProfile
+
+Command <|-- EditCommand
+Workout <|-- StrengthWorkout
+Workout <|-- RunWorkout
+
+EditCommand ..> WorkoutList
+EditCommand ..> Storage
+EditCommand ..> Ui
+EditCommand ..> UserProfile
+EditCommand ..> Workout
+EditCommand ..> StrengthWorkout
+EditCommand ..> RunWorkout
+EditCommand ..> Parser
+@enduml

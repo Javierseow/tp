@@ -1,0 +1,36 @@
+@startuml
+skinparam classAttributeIconSize 0
+
+abstract class Command {
+	+execute(storage, workouts, ui, profile)
+}
+
+class DeleteCommand {
+	-workoutIndex : String
+	+execute(storage, workouts, ui, profile)
+}
+
+class WorkoutList {
+	+getSize()
+	+getWorkoutAtIndex(index)
+	+deleteWorkout(index)
+	+getWorkouts()
+}
+
+class Storage {
+	+saveData(workouts, profile) : boolean
+}
+
+class Ui {
+	+showMessage(message)
+	+showError(message)
+}
+
+class UserProfile
+
+Command <|-- DeleteCommand
+DeleteCommand ..> WorkoutList
+DeleteCommand ..> Storage
+DeleteCommand ..> Ui
+DeleteCommand ..> UserProfile
+@enduml
