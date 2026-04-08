@@ -8,6 +8,8 @@ import fitlogger.exercisedictionary.ExerciseDictionary;
 import java.util.List;
 import java.util.Scanner;
 import java.util.Set;
+import java.time.YearMonth;
+import java.time.LocalDate;
 
 public class Ui {
     private static final String LINE = "-----------------------------------------------------";
@@ -74,6 +76,7 @@ public class Ui {
                 + "    filter <muscle_group>                          Filter workouts by muscle (e.g., filter chest)\n"
                 + "    delete <index>                                 Delete workout by number\n"
                 + "    search-date <YYYY-MM-DD>                       View workouts completed on a date\n"
+                + "    view-calendar <YYYY-MM>                        View active days in a calendar month\n"
                 + "    exit                                           Save and close FitLogger";
         showMessage(helpMessage);
     }
@@ -171,6 +174,37 @@ public class Ui {
         String weightToDisplay =
                 (weight == -1) ? "weight not set yet" : String.format("%.2f", weight) + "kg";
         showMessage(weightToDisplay);
+        showLine();
+    }
+
+    public void showCalendar(YearMonth yearMonth, Set<Integer> activeDays) {
+        showLine();
+        String title = yearMonth.getMonth().name() + " " + yearMonth.getYear();
+        showMessage("      " + title);
+        showMessage(" Su  Mo  Tu  We  Th  Fr  Sa");
+
+        // Get the first day of the month and its day of the week
+        LocalDate firstOfMonth = yearMonth.atDay(1);
+        int dayOfWeekValue = firstOfMonth.getDayOfWeek().getValue() % 7; // Sunday = 0
+
+        // Print leading spaces
+        for (int i = 0; i < dayOfWeekValue; i++) {
+            showMessageNoNewline("    ");
+        }
+
+        int daysInMonth = yearMonth.lengthOfMonth();
+        for (int day = 1; day <= daysInMonth; day++) {
+            // Highlight active days with brackets []
+            String dayStr = activeDays.contains(day) ? String.format("[%2d]", day)
+                    : String.format(" %2d ", day);
+            showMessageNoNewline(dayStr);
+
+            // Break line every Saturday
+            if ((day + dayOfWeekValue) % 7 == 0) {
+                showMessage("");
+            }
+        }
+        showMessage("\n");
         showLine();
     }
 }
