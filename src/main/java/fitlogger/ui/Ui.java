@@ -71,6 +71,7 @@ public class Ui {
                 + "    untag-muscle <lift_shortcut_ID> <muscle>       Remove muscle group tags\n"
                 + "    train <muscle>                                 List exercises targeting that muscle\n"
                 + "    history                                        View all logged workouts\n"
+                + "    filter <muscle_group>                          Filter workouts by muscle (e.g., filter chest)\n"
                 + "    delete <index>                                 Delete workout by number\n"
                 + "    search-date <YYYY-MM-DD>                       View workouts completed on a date\n"
                 + "    exit                                           Save and close FitLogger";
@@ -103,7 +104,8 @@ public class Ui {
 
     public void showExerciseDatabase(ExerciseDictionary dictionary, boolean isDetailed) {
         showMessage("Strength Shortcuts:");
-        for (java.util.Map.Entry<Integer, String> entry : dictionary.getLiftShortcuts().entrySet()) {
+        for (java.util.Map.Entry<Integer, String> entry : dictionary.getLiftShortcuts()
+                .entrySet()) {
             int id = entry.getKey();
             showMessageNoNewline("  [" + id + "] -> " + entry.getValue());
 
@@ -132,7 +134,7 @@ public class Ui {
         for (int i = 0; i < groups.length; i++) {
             showMessageNoNewline(groups[i].displayName());
             if (i != groups.length - 1) {
-                //don't show comma on the last element
+                // don't show comma on the last element
                 showMessageNoNewline(", ");
             }
         }
@@ -161,13 +163,13 @@ public class Ui {
         showMessage(nameToDisplay);
 
         showMessageNoNewline("Height: ");
-        String heightToDisplay = (height == -1) ?
-                "height not set yet" : String.format("%.2f", height) + "m";
+        String heightToDisplay =
+                (height == -1) ? "height not set yet" : String.format("%.2f", height) + "m";
         showMessage(heightToDisplay);
 
         showMessageNoNewline("Weight: ");
-        String weightToDisplay = (weight == -1) ?
-                "weight not set yet" : String.format("%.2f", weight) + "kg";
+        String weightToDisplay =
+                (weight == -1) ? "weight not set yet" : String.format("%.2f", weight) + "kg";
         showMessage(weightToDisplay);
         showLine();
     }

@@ -222,6 +222,36 @@ Expected error:
 
 ---
 
+### Filter workouts by muscle group: `filter`
+
+Shows only the workouts from your history that target a specific muscle group.
+
+Format: `filter <MUSCLE_GROUP>`
+
+- The `<MUSCLE_GROUP>` must be a valid group from the database (e.g., `pecs`, `delts`, `quads`).
+- Only **Strength Workouts** that have been tagged with the specified muscle group will be displayed.
+- Run workouts are currently excluded from this filter.
+
+Example:
+- `filter delts`
+
+Sample output when matches exist:
+`Workouts matching category [delts]:`
+`1. Overhead Press (Date: 2026-04-03) (40.0kg, 3 sets of 8 reps)`
+
+Sample output when no matches exist:
+`No workouts found.`
+
+Invalid input example:
+`filter`
+
+Expected error:
+`Please specify a muscle group. Usage: filter <muscle_group>`
+
+> Tip: Use `view-muscle-groups` to see the full list of available categories you can use with this command.
+
+---
+
 ### Viewing total mileage: `view-total-mileage`
 
 Displays the total distance you have run across all logged run workouts.
