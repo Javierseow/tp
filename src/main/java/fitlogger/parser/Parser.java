@@ -6,6 +6,7 @@ import fitlogger.command.Command;
 import fitlogger.command.DeleteCommand;
 import fitlogger.command.EditCommand;
 import fitlogger.command.ExitCommand;
+import fitlogger.command.FilterTypeCommand;
 import fitlogger.command.HelpCommand;
 import fitlogger.command.LiftMuscleGroupsCommand;
 import fitlogger.command.SearchDateCommand;
@@ -13,6 +14,7 @@ import fitlogger.command.TagMuscleCommand;
 import fitlogger.command.TrainMuscleCommand;
 import fitlogger.command.UntagMuscleCommand;
 import fitlogger.command.UpdateProfileCommand;
+import fitlogger.command.ViewCalendarCommand;
 import fitlogger.command.ViewDatabaseCommand;
 import fitlogger.command.ViewHistoryCommand;
 import fitlogger.command.ViewLastLiftCommand;
@@ -29,6 +31,7 @@ import fitlogger.workoutlist.WorkoutList;
 import fitlogger.exercisedictionary.ExerciseDictionary;
 
 import java.time.LocalDate;
+import java.time.YearMonth;
 import java.time.format.DateTimeParseException;
 
 public class Parser {
@@ -99,6 +102,12 @@ public class Parser {
 
         case "lastlift":
             return new ViewLastLiftCommand(arguments);
+
+        case "filter":
+            return new FilterTypeCommand(arguments, dictionary);
+
+        case "view-calendar":
+            return parseViewCalendar(arguments);
 
         default:
             throw new FitLoggerException(
@@ -350,21 +359,20 @@ public class Parser {
     private static Command parseTrainMuscle(String arguments, ExerciseDictionary dictionary)
             throws FitLoggerException {
         if (arguments.isBlank()) {
-            throw new FitLoggerException(
-                    "Missing muscle group.\nUsage: train <muscle group>\n"
-                            + "Example: train delts   OR   train upper back");
+            throw new FitLoggerException("Missing muscle group.\nUsage: train <muscle group>\n"
+                    + "Example: train delts   OR   train upper back");
         }
 
         String muscleGroup = arguments.trim().toUpperCase().replace(' ', '_');
         if (!MuscleGroup.isValid(muscleGroup)) {
-            throw new FitLoggerException("Invalid muscle group.\n" +
-                    "Type 'view-muscle-groups' to see all available muscle groups");
+            throw new FitLoggerException("Invalid muscle group.\n"
+                    + "Type 'view-muscle-groups' to see all available muscle groups");
         }
         return new TrainMuscleCommand(MuscleGroup.valueOf(muscleGroup), dictionary);
     }
 
-    private static Command parseTagMuscle(String arguments, ExerciseDictionary dictionary, boolean isTag)
-            throws FitLoggerException {
+    private static Command parseTagMuscle(String arguments, ExerciseDictionary dictionary,
+            boolean isTag) throws FitLoggerException {
         String usage = (isTag ? "tag" : "untag") + "-muscle <shortcut-ID> <muscle-group>";
         if (arguments.isBlank()) {
             throw new FitLoggerException("Missing arguments.\nUsage: " + usage);
@@ -377,21 +385,21 @@ public class Parser {
         try {
             int id = Integer.parseInt(parts[0].trim());
             if (!dictionary.getLiftShortcuts().containsKey(id)) {
-                throw new FitLoggerException("Shortcut does not exist in database.\n" +
-                        "Perform 'view-database' for all available shortcuts");
+                throw new FitLoggerException("Shortcut does not exist in database.\n"
+                        + "Perform 'view-database' for all available shortcuts");
             }
             String muscleGroup = parts[1].trim().toUpperCase().replace(' ', '_');
             if (!MuscleGroup.isValid(muscleGroup)) {
-                throw new FitLoggerException("Muscle group does not exist in database.\n"+
-                        "Perform 'view-muscle-groups' for all available shortcuts");
+                throw new FitLoggerException("Muscle group does not exist in database.\n"
+                        + "Perform 'view-muscle-groups' for all available shortcuts");
             }
             if (isTag) {
                 return new TagMuscleCommand(id, MuscleGroup.valueOf(muscleGroup), dictionary);
             }
             return new UntagMuscleCommand(id, MuscleGroup.valueOf(muscleGroup), dictionary);
         } catch (NumberFormatException e) {
-            throw new FitLoggerException("Input a valid shortcut ID.\n" +
-                    "Perform 'view-database' for all available shortcuts");
+            throw new FitLoggerException("Input a valid shortcut ID.\n"
+                    + "Perform 'view-database' for all available shortcuts");
         }
     }
 
@@ -403,13 +411,13 @@ public class Parser {
         try {
             int id = Integer.parseInt(arguments.trim());
             if (!dictionary.getLiftShortcuts().containsKey(id)) {
-                throw new FitLoggerException("Shortcut does not exist in database.\n" +
-                        "Perform 'view-database' for all available shortcuts");
+                throw new FitLoggerException("Shortcut does not exist in database.\n"
+                        + "Perform 'view-database' for all available shortcuts");
             }
             return new LiftMuscleGroupsCommand(id, dictionary);
         } catch (NumberFormatException e) {
-            throw new FitLoggerException("Input a valid shortcut ID.\n" +
-                    "Perform 'view-database' for all available shortcuts");
+            throw new FitLoggerException("Input a valid shortcut ID.\n"
+                    + "Perform 'view-database' for all available shortcuts");
         }
     }
 
@@ -520,5 +528,19 @@ public class Parser {
      */
     public static String[] splitInput(String line, String splitCharacter, int maxSplit) {
         return line.trim().split("\\s*" + splitCharacter + "\\s*", maxSplit);
+    }
+
+    private static Command parseViewCalendar(String arguments) throws FitLoggerException {
+        try {
+            if (arguments.isBlank()) {
+                // Default to current month if no arguments
+                return new ViewCalendarCommand(YearMonth.now());
+            }
+            // Expected format: YYYY-MM
+            return new ViewCalendarCommand(YearMonth.parse(arguments));
+        } catch (DateTimeParseException e) {
+            throw new FitLoggerException(
+                    "Invalid calendar format. Use YYYY-MM (e.g., view-calendar 2026-04)");
+        }
     }
 }

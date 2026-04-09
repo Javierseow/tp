@@ -97,4 +97,13 @@ public class ExerciseDictionary {
         }
         return set;
     }
+
+    public int getShortcutIdFor(String description) {
+        for (java.util.Map.Entry<Integer, String> entry : getLiftShortcuts().entrySet()) {
+            if (entry.getValue().equalsIgnoreCase(description)) {
+                return entry.getKey();
+            }
+        }
+        return -1;
+    }
 }

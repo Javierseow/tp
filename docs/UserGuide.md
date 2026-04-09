@@ -221,6 +221,74 @@ Expected error:
 `Invalid date format for search-date.`
 
 ---
+### View workout calendar: `view-calendar`
+
+Displays an ASCII calendar for a specific month, highlighting the days you successfully logged a workout.
+
+Format: `view-calendar YYYY-MM>`
+
+If no date is provided (e.g., just view-calendar), it defaults to the current month.
+
+Active days (days where you logged at least one workout) are highlighted with square brackets [ ].
+
+This command is perfect for visualizing your training consistency and streaks.
+
+Examples:
+
+`view-calendar` (Shows the current month)
+
+`view-calendar 2026-04` (Shows April 2026)
+
+Sample output:
+
+Plaintext
+-----------------------------------------------------
+      APRIL 2026
+ Su  Mo  Tu  We  Th  Fr  Sa
+              1   2   3   4
+   5   6   7  [8]  9  10  11
+  12  13  14  15  16 [17] 18
+  19  20  21  22  23  24  25
+  26  27  28  29  30
+-----------------------------------------------------
+
+Invalid input example:
+
+`view-calendar 2026/04`
+
+Expected error:
+`Invalid calendar format. Use YYYY-MM (e.g., view-calendar 2026-04)`
+
+---
+### Filter workouts by muscle group: `filter`
+
+Shows only the workouts from your history that target a specific muscle group.
+
+Format: `filter <MUSCLE_GROUP>`
+
+- The `<MUSCLE_GROUP>` must be a valid group from the database (e.g., `pecs`, `delts`, `quads`).
+- Only **Strength Workouts** that have been tagged with the specified muscle group will be displayed.
+- Run workouts are currently excluded from this filter.
+
+Example:
+- `filter delts`
+
+Sample output when matches exist:
+`Workouts matching category [delts]:`
+`1. Overhead Press (Date: 2026-04-03) (40.0kg, 3 sets of 8 reps)`
+
+Sample output when no matches exist:
+`No workouts found.`
+
+Invalid input example:
+`filter`
+
+Expected error:
+`Please specify a muscle group. Usage: filter <muscle_group>`
+
+> Tip: Use `view-muscle-groups` to see the full list of available categories you can use with this command.
+
+---
 
 ### Viewing total mileage: `view-total-mileage`
 
@@ -452,6 +520,8 @@ Output:
 | **Edit Workout** | `edit <index> <field>/<value>` | `edit 1 weight/85` |
 | **Delete Workout** | `delete <index>` | `delete 2` |
 | **Search by Date** | `search-date <YYYY-MM-DD>` | `search-date 2026-03-15` |
+| **View Calendar** | `view-calendar <YYYY-MM>` | `view-calendar 2026-04` |
+| **Filter Workout** | `filter <MUSCLE_GROUP>` | `filter delts` |
 | **History** | `history` | `history` |
 | **View Profile** | `profile view` | `profile view` |
 | **Set Profile** | `profile set <field> <value>` | `profile set weight 75` |

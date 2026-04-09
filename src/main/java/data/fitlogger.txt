@@ -1,0 +1,12 @@
+name: null height: -1.0 weight: -1.0
+S | lift | 1 | Squat | glutes,quads,hamstring
+S | lift | 2 | Bench Press | delts,pecs,triceps
+S | lift | 3 | Deadlift | lower back,traps,glutes,hamstring
+S | lift | 4 | Overhead Press | delts,triceps,traps
+S | run | 1 | Easy Run
+S | run | 2 | Tempo Run
+S | run | 3 | Intervals
+L | Overhead Press | 2026-04-03 | 40.0 | 3 | 8
+L | Bench Press | 2026-04-03 | 60.0 | 3 | 10
+L | Squat | 2026-04-03 | 60.0 | 3 | 10
+R | ez run | 2026-04-09 | 100.0 | 100.0

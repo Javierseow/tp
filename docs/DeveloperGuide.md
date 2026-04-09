@@ -971,6 +971,50 @@ stopping at the first match, in order to find the maximum value.
 - This decision keeps the PR definition intuitive — heavier lift = better PR
   for strength; longer run = better PR for endurance.
 
+
+### Enhancement 13: ViewCalendarCommand and ASCII Calendar Generation
+
+#### Purpose and user value
+The `ViewCalendarCommand` provides a visual "at-a-glance" view of a user's training consistency. By rendering a traditional monthly grid in the terminal, users can quickly identify gaps in their training and visualize their workout "streaks" without scanning a long text history.
+
+Command format:
+```
+view-calendar <YYYY-MM>
+```
+
+Example: `view-calendar 2026-04`
+
+#### Design overview
+This enhancement utilizes the java.time API to handle calendar logic and follows the standard FitLogger command pipeline:
+
+1. `Parser.parse(...)` routes the command to `Parser.parseViewCalendar(...)`.
+2. `YearMonth` is used as the primary data structure to represent the target month.
+3. `ViewCalendarCommand` extracts the "active days" from the `WorkoutList`.
+4. `Ui.showCalendar(...)` performs the complex ASCII grid rendering.
+
+#### Component-level behavior
+
+1. Data Collection (`ViewCalendarCommand#execute`)
+The command performs a linear scan of the `WorkoutList`. It uses a `HashSet<Integer>` to store the `dayOfMonth` for every workout that matches the `targetMonth`.
+    - Decision: A `Set` is used to ensure that multiple workouts on the same day do not cause duplicate highlighting or logic errors during rendering.
+
+2. Grid Rendering (`Ui#showCalendar`)
+The rendering logic in Ui is the most complex part of this enhancement:
+- It determines the **start day** of the month using `firstOfMonth.getDayOfWeek().getValue() % 7` to align Sunday to the first column.
+- It calculates the **number of days** in the month using `yearMonth.lengthOfMonth()`.
+- It uses a single loop from 1 to `daysInMonth`, using padding spaces for the first week and line breaks every Saturday.
+- **Highlighting**: For each day, it checks `if (activeDays.contains(day))`. If true, it wraps the day in `[ ]` brackets; otherwise, it pads it with spaces to maintain column alignment.
+
+#### Design considerations
+
+Aspect: Calendar Alignment
+- Current choice: Fixed-width `String.format("%2d")`: Ensures that single-digit days (1-9) and double-digit days (10-31) occupy the same horizontal space, preventing the grid from "shifting" and becoming unreadable.
+- Alternative: Simple tab characters `\t`: Rejected because terminal tab widths vary across different operating systems (Windows vs. Linux), which would break the ASCII alignment.
+
+#### Aspect: Date Library
+
+- Current choice: `java.time.YearMonth`: Perfectly encapsulates the requirement (Month + Year). It simplifies leap year handling and day-of-week calculations compared to the older `java.util.Calendar` API.
+
 ### Notes for team writeups
 
 ### Command Architecture
