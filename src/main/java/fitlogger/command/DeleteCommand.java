@@ -5,6 +5,9 @@ import fitlogger.storage.Storage;
 import fitlogger.ui.Ui;
 import fitlogger.workoutlist.WorkoutList;
 
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
 /**
  * Deletes a workout from the in-memory workout list by user-facing index.
  *
@@ -13,6 +16,8 @@ import fitlogger.workoutlist.WorkoutList;
  * </p>
  */
 public class DeleteCommand extends Command {
+    private static final Logger LOGGER = Logger.getLogger(DeleteCommand.class.getName());
+
     /** The one-based workout index provided by the user for deletion. */
     private final int oneBasedIndex;
 
@@ -40,8 +45,17 @@ public class DeleteCommand extends Command {
      */
     @Override
     public void execute(Storage storage, WorkoutList workouts, Ui ui, UserProfile profile) {
+        assert storage != null : "Storage must not be null";
+        assert workouts != null : "WorkoutList must not be null";
+        assert ui != null : "Ui must not be null";
+        assert profile != null : "UserProfile must not be null";
+
+        LOGGER.log(Level.INFO, "Delete requested for one-based index {0}", oneBasedIndex);
+
         int zeroBasedIndex = oneBasedIndex - 1;
         if (zeroBasedIndex < 0 || zeroBasedIndex >= workouts.getSize()) {
+            LOGGER.log(Level.WARNING, "Delete rejected: invalid one-based index {0}",
+                    oneBasedIndex);
             ui.showMessage("Invalid workout index: " + oneBasedIndex);
             return;
         }
@@ -50,9 +64,12 @@ public class DeleteCommand extends Command {
         workouts.deleteWorkout(zeroBasedIndex);
         boolean isSaved = storage.saveData(workouts.getWorkouts(), profile);
         if (!isSaved) {
+            LOGGER.log(Level.WARNING, "Delete applied in memory but save failed for index {0}",
+                    oneBasedIndex);
             ui.showError("Failed to save workouts to disk. Changes remain only in memory.");
             return;
         }
+        LOGGER.log(Level.INFO, "Delete succeeded for workout \"{0}\"", deletedWorkoutName);
         ui.showMessage("Deleted workout: " + deletedWorkoutName);
     }
 }

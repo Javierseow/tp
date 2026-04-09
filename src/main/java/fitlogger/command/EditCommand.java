@@ -10,6 +10,9 @@ import fitlogger.workout.StrengthWorkout;
 import fitlogger.workout.Workout;
 import fitlogger.workoutlist.WorkoutList;
 
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
 /**
  * Edits a single field of an existing workout identified by one-based index.
  *
@@ -17,6 +20,8 @@ import fitlogger.workoutlist.WorkoutList;
  * for strength workouts, and distance/duration for run workouts.
  */
 public class EditCommand extends Command {
+    private static final Logger LOGGER = Logger.getLogger(EditCommand.class.getName());
+
     private final int oneBasedIndex;
     private final String fieldName;
     private final String newValue;
@@ -44,8 +49,20 @@ public class EditCommand extends Command {
      */
     @Override
     public void execute(Storage storage, WorkoutList workouts, Ui ui, UserProfile profile) {
+        assert storage != null : "Storage must not be null";
+        assert workouts != null : "WorkoutList must not be null";
+        assert ui != null : "Ui must not be null";
+        assert profile != null : "UserProfile must not be null";
+        assert fieldName != null : "Field name must not be null";
+        assert newValue != null : "New value must not be null";
+
+        LOGGER.log(Level.INFO, "Edit requested for index {0}, field {1}",
+                new Object[]{oneBasedIndex, fieldName});
+
         int zeroBasedIndex = oneBasedIndex - 1;
         if (zeroBasedIndex < 0 || zeroBasedIndex >= workouts.getSize()) {
+            LOGGER.log(Level.WARNING, "Edit rejected: invalid one-based index {0}",
+                    oneBasedIndex);
             ui.showMessage("Invalid workout index: " + oneBasedIndex);
             return;
         }
@@ -62,6 +79,7 @@ public class EditCommand extends Command {
                 workout.setDescription(newValue.trim());
                 isUpdated = true;
             } catch (FitLoggerException exception) {
+                LOGGER.log(Level.WARNING, "Edit rejected for workout name field", exception);
                 ui.showMessage(exception.getMessage());
                 return;
             }
@@ -69,6 +87,8 @@ public class EditCommand extends Command {
 
         case "weight":
             if (!(workout instanceof StrengthWorkout)) {
+                LOGGER.log(Level.WARNING, "Edit rejected: field {0} used on non-lift workout",
+                        normalizedField);
                 ui.showMessage("Field 'weight' is only valid for lift workouts.");
                 return;
             }
@@ -77,6 +97,8 @@ public class EditCommand extends Command {
 
         case "sets":
             if (!(workout instanceof StrengthWorkout)) {
+                LOGGER.log(Level.WARNING, "Edit rejected: field {0} used on non-lift workout",
+                        normalizedField);
                 ui.showMessage("Field 'sets' is only valid for lift workouts.");
                 return;
             }
@@ -85,6 +107,8 @@ public class EditCommand extends Command {
 
         case "reps":
             if (!(workout instanceof StrengthWorkout)) {
+                LOGGER.log(Level.WARNING, "Edit rejected: field {0} used on non-lift workout",
+                        normalizedField);
                 ui.showMessage("Field 'reps' is only valid for lift workouts.");
                 return;
             }
@@ -93,6 +117,8 @@ public class EditCommand extends Command {
 
         case "distance":
             if (!(workout instanceof RunWorkout)) {
+                LOGGER.log(Level.WARNING, "Edit rejected: field {0} used on non-run workout",
+                        normalizedField);
                 ui.showMessage("Field 'distance' is only valid for run workouts.");
                 return;
             }
@@ -101,6 +127,8 @@ public class EditCommand extends Command {
 
         case "duration":
             if (!(workout instanceof RunWorkout)) {
+                LOGGER.log(Level.WARNING, "Edit rejected: field {0} used on non-run workout",
+                        normalizedField);
                 ui.showMessage("Field 'duration' is only valid for run workouts.");
                 return;
             }
@@ -108,6 +136,7 @@ public class EditCommand extends Command {
             break;
 
         default:
+            LOGGER.log(Level.WARNING, "Edit rejected: unknown field {0}", fieldName);
             ui.showMessage("Unknown editable field: " + fieldName);
             return;
         }
@@ -115,9 +144,12 @@ public class EditCommand extends Command {
         if (isUpdated) {
             boolean isSaved = storage.saveData(workouts.getWorkouts(), profile);
             if (!isSaved) {
+                LOGGER.log(Level.WARNING, "Edit applied in memory but save failed for index {0}",
+                        oneBasedIndex);
                 ui.showError("Failed to save workouts to disk. Changes remain only in memory.");
                 return;
             }
+            LOGGER.log(Level.INFO, "Edit succeeded for one-based index {0}", oneBasedIndex);
             ui.showMessage("Updated workout " + oneBasedIndex + ": " + workout);
         }
     }
@@ -135,8 +167,10 @@ public class EditCommand extends Command {
             workout.setWeight(value);
             return true;
         } catch (NumberFormatException exception) {
+            LOGGER.log(Level.WARNING, "Edit rejected: invalid weight value {0}", newValue);
             ui.showMessage("Invalid weight value: " + newValue);
         } catch (FitLoggerException exception) {
+            LOGGER.log(Level.WARNING, "Edit rejected while setting weight", exception);
             ui.showMessage(exception.getMessage());
         }
         return false;
@@ -155,8 +189,10 @@ public class EditCommand extends Command {
             workout.setSets(value);
             return true;
         } catch (NumberFormatException exception) {
+            LOGGER.log(Level.WARNING, "Edit rejected: invalid sets value {0}", newValue);
             ui.showMessage("Invalid sets value: " + newValue);
         } catch (FitLoggerException exception) {
+            LOGGER.log(Level.WARNING, "Edit rejected while setting sets", exception);
             ui.showMessage(exception.getMessage());
         }
         return false;
@@ -175,8 +211,10 @@ public class EditCommand extends Command {
             workout.setReps(value);
             return true;
         } catch (NumberFormatException exception) {
+            LOGGER.log(Level.WARNING, "Edit rejected: invalid reps value {0}", newValue);
             ui.showMessage("Invalid reps value: " + newValue);
         } catch (FitLoggerException exception) {
+            LOGGER.log(Level.WARNING, "Edit rejected while setting reps", exception);
             ui.showMessage(exception.getMessage());
         }
         return false;
@@ -195,8 +233,10 @@ public class EditCommand extends Command {
             workout.setDistance(value);
             return true;
         } catch (NumberFormatException exception) {
+            LOGGER.log(Level.WARNING, "Edit rejected: invalid distance value {0}", newValue);
             ui.showMessage("Invalid distance value: " + newValue);
         } catch (FitLoggerException exception) {
+            LOGGER.log(Level.WARNING, "Edit rejected while setting distance", exception);
             ui.showMessage(exception.getMessage());
         }
         return false;
@@ -215,8 +255,10 @@ public class EditCommand extends Command {
             workout.setDurationMinutes(value);
             return true;
         } catch (NumberFormatException exception) {
+            LOGGER.log(Level.WARNING, "Edit rejected: invalid duration value {0}", newValue);
             ui.showMessage("Invalid duration value: " + newValue);
         } catch (FitLoggerException exception) {
+            LOGGER.log(Level.WARNING, "Edit rejected while setting duration", exception);
             ui.showMessage(exception.getMessage());
         }
         return false;
