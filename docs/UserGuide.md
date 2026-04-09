@@ -365,6 +365,136 @@ Weight: 70.00kg
 - This command ignores all trailing inputs
 
 ---
+
+### View all muscle groups: `view-muscle-groups`
+
+Displays all available muscle groups that can be used for tagging exercises and filtering workouts.
+
+Format: `view-muscle-groups`
+
+- Useful as a reference before using `tag-muscle`, `untag-muscle`, `train`, or `filter`.
+- Ignores all arguments passed after the command.
+
+Expected output:
+
+```
+Here are all available muscle groups: 
+delts, pecs, forearms, upper back, lower back, abs, lats, biceps, triceps, traps, glutes, quads, hamstring, calves
+```
+
+---
+
+### View muscle groups for an exercise: `muscle-groups`
+
+Displays all muscle groups currently tagged to a specific lift shortcut.
+
+Format: `muscle-groups <SHORTCUT_ID>`
+
+- `<SHORTCUT_ID>` — the numeric ID of a lift shortcut from the database. Use `view-database` to see available IDs.
+- Only works for **lift** shortcuts, not run shortcuts.
+
+Examples:
+
+- `muscle-groups 2`
+
+Expected output when tags exist:
+
+```
+Muscle groups for Bench Press: [PECS, TRICEPS, DELTS]
+```
+
+Expected output when no tags exist:
+
+```
+No muscle groups tagged for Bench Press (ID: 2).
+```
+
+Invalid input example: `muscle-groups abc`
+
+Expected error: `Input a valid shortcut ID.`
+
+---
+
+### Tag a muscle group to an exercise: `tag-muscle`
+
+Adds a muscle group tag to a lift shortcut in the database. This lets you use `train` and `filter` to find exercises targeting that muscle.
+
+Format: `tag-muscle <SHORTCUT_ID> <MUSCLE_GROUP>`
+
+- `<SHORTCUT_ID>` — the numeric ID of a lift shortcut. Use `view-database` to see available IDs.
+- `<MUSCLE_GROUP>` — a valid muscle group name. Use `view-muscle-groups` to see available options.
+- Multi-word muscle groups use a space (e.g., `upper back`).
+
+Examples:
+
+- `tag-muscle 1 quads`
+- `tag-muscle 2 upper back`
+
+Expected output:
+
+```
+Added quads to lift 1
+```
+---
+
+### Remove a muscle group tag from an exercise: `untag-muscle`
+
+Removes a muscle group tag from a lift shortcut.
+
+Format: `untag-muscle <SHORTCUT_ID> <MUSCLE_GROUP>`
+
+- `<SHORTCUT_ID>` — the numeric ID of a lift shortcut. Use `view-database` to see available IDs.
+- `<MUSCLE_GROUP>` — a valid muscle group currently tagged to that shortcut.
+
+Examples:
+
+- `untag-muscle 2 delts`
+
+Expected output:
+
+```
+Removed delts from lift ID: 2
+```
+
+---
+
+### Find exercises targeting a muscle: `train`
+
+Lists all lift shortcuts in the database that are tagged with the specified muscle group. Useful for planning your workout session around a target muscle.
+
+Format: `train <MUSCLE_GROUP>`
+
+- `<MUSCLE_GROUP>` — a valid muscle group name. Use `view-muscle-groups` to see all options.
+- Multi-word muscle groups use a space (e.g., `train lower back`).
+- Only **lift** shortcuts are searched.
+
+Examples:
+
+- `train delts`
+- `train lower back`
+
+Expected output when matches exist:
+
+```
+Exercises targeting: delts
+   [2] -> Bench Press
+   [4] -> Overhead Press
+```
+
+Expected output when no matches exist:
+
+```
+Exercises targeting: delts
+No lift exercises currently targeting delts
+Use 'tag-muscle <shortcut-ID> <muscle>' to tag an exercise
+```
+
+Invalid input example: `train`
+
+Expected error: `Missing muscle group.`
+
+---
+
 ### Viewing your last lift: `lastlift`
 
 Displays the most recent recorded stats for a specific strength exercise.
