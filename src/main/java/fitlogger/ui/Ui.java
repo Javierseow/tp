@@ -4,6 +4,8 @@ import fitlogger.musclegroup.MuscleGroup;
 import fitlogger.workout.StrengthWorkout;
 import fitlogger.workout.Workout;
 import fitlogger.exercisedictionary.ExerciseDictionary;
+import fitlogger.workout.RunWorkout;
+import fitlogger.workout.StrengthWorkout;
 
 import java.util.List;
 import java.util.Scanner;
@@ -156,6 +158,29 @@ public class Ui {
         showMessage("  Weight : " + lift.getWeight() + "kg");
         showMessage("  Sets   : " + lift.getSets());
         showMessage("  Reps   : " + lift.getReps());
+        showLine();
+    }
+
+    /**
+     * Displays the personal record entry for a given exercise.
+     * Shows weight/sets/reps for strength workouts, distance/duration for runs.
+     *
+     * @param prWorkout The workout entry representing the personal record.
+     */
+    public void showPr(Workout prWorkout) {
+        showLine();
+        showMessage("Personal Record for: " + prWorkout.getDescription());
+        showMessage("  Date   : " + prWorkout.getDate());
+        if (prWorkout instanceof StrengthWorkout) {
+            StrengthWorkout lift = (StrengthWorkout) prWorkout;
+            showMessage("  Weight : " + lift.getWeight() + "kg");
+            showMessage("  Sets   : " + lift.getSets());
+            showMessage("  Reps   : " + lift.getReps());
+        } else if (prWorkout instanceof RunWorkout) {
+            RunWorkout run = (RunWorkout) prWorkout;
+            showMessage("  Distance : " + run.getDistance() + "km");
+            showMessage("  Duration : " + run.getDurationMinutes() + " mins");
+        }
         showLine();
     }
 

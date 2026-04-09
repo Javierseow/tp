@@ -22,6 +22,7 @@ import fitlogger.command.ViewMuscleGroupCommand;
 import fitlogger.command.ViewProfileCommand;
 import fitlogger.command.ViewShoeMileageCommand;
 import fitlogger.command.AddShortcutCommand;
+import fitlogger.command.ViewPrCommand;
 import fitlogger.exception.FitLoggerException;
 import fitlogger.musclegroup.MuscleGroup;
 import fitlogger.workout.RunWorkout;
@@ -108,6 +109,9 @@ public class Parser {
 
         case "view-calendar":
             return parseViewCalendar(arguments);
+
+        case "pr":
+            return new ViewPrCommand(arguments);
 
         default:
             throw new FitLoggerException(
