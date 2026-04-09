@@ -1006,6 +1006,147 @@ Aspect: Calendar Alignment
 
 - Current choice: `java.time.YearMonth`: Perfectly encapsulates the requirement (Month + Year). It simplifies leap year handling and day-of-week calculations compared to the older `java.util.Calendar` API.
 
+---
+### Enhancement 14: Muscle Group Tagging System (`ExerciseDictionary` muscle methods, `TagMuscleCommand`, `UntagMuscleCommand`, `LiftMuscleGroupsCommand`, `ViewMuscleGroupCommand`, and `TrainMuscleCommand`)
+
+#### Purpose and user value
+
+The muscle group tagging system extends the exercise shortcut database to support muscle group metadata. Users can tag lift shortcuts with one or more muscle groups, then use that metadata to plan workouts (`train`), inspect exercises (`muscle-groups`), and filter history (`filter`).
+
+The system has five parts:
+
+- `TagMuscleCommand`: adds a muscle group tag to a lift shortcut.
+- `UntagMuscleCommand`: removes a muscle group tag from a lift shortcut.
+- `LiftMuscleGroupsCommand`: displays all muscle groups tagged to a specific lift shortcut.
+- `ViewMuscleGroupCommand`: displays all valid muscle groups available in the app.
+- `TrainMuscleCommand`: lists all lift shortcuts tagged with a given muscle group.
+
+The four default lift shortcuts ship with pre-loaded muscle group tags (e.g. Bench Press is pre-tagged with `pecs`, `triceps`, and `delts`). Tags added or removed by the user are persisted to the save file.
+
+---
+
+#### Class-level design
+
+`ExerciseDictionary` is the shared data model for this system. It holds muscle group data in a `Map<Integer, EnumSet<MuscleGroup>>` field called `liftMuscleGroups`, keyed by lift shortcut ID. `MuscleGroup` is an enum with 14 values representing distinct muscle groups, each with a `displayName()` method that returns a lowercase, space-separated string for UI output.
+
+`TagMuscleCommand` and `UntagMuscleCommand` both extend the abstract `EditMuscleTagCommand`, which stores the shared fields `id`, `muscle`, and `dictionary`. This intermediate layer avoids duplicating constructor logic across the two commands while keeping each command's `execute(...)` method focused on a single operation.
+
+`LiftMuscleGroupsCommand`, `ViewMuscleGroupCommand`, and `TrainMuscleCommand` extend `Command` directly, as they have no shared state with the tag editing commands.
+
+---
+
+#### Component-level behavior
+
+**`ExerciseDictionary` — muscle group methods**
+
+- `tagMuscles(int id, MuscleGroup muscleGroup)`: calls `putIfAbsent` to initialise an `EnumSet` for the ID if one does not exist, then adds the muscle group.
+- `untagMuscles(int id, MuscleGroup muscleGroup)`: retrieves the set for the ID and removes the muscle group. If no set exists, returns silently.
+- `getMusclesFor(int id)`: returns the `EnumSet` for the ID, or an empty `EnumSet` if none exists.
+
+`EnumSet` was chosen over `HashSet` because all elements are of a known enum type, making iteration ordered and memory usage compact.
+
+**`TagMuscleCommand.execute(...)`**
+
+1. Call `dictionary.tagMuscles(id, muscle)`.
+2. Display confirmation: `Added <muscle.displayName()> to lift <id>`.
+
+**`UntagMuscleCommand.execute(...)`**
+
+1. Call `dictionary.untagMuscles(id, muscle)`.
+2. Display confirmation: `Removed <muscle.displayName()> from lift ID: <id>`.
+
+**`LiftMuscleGroupsCommand.execute(...)`**
+
+1. Retrieve the exercise name via `dictionary.getLiftName(id)`.
+2. Retrieve the muscle group set via `dictionary.getMusclesFor(id)`.
+3. If the set is empty, display `No muscle groups tagged for <name> (ID: <id>).`
+4. Otherwise display `Muscle groups for <name>: <set>`.
+
+**`ViewMuscleGroupCommand.execute(...)`**
+
+1. Delegates entirely to `ui.showMuscleGroups()`, which iterates over `MuscleGroup.values()` and prints each `displayName()`.
+
+**`TrainMuscleCommand.execute(...)`**
+
+1. Display a header: `Exercises targeting: <targetMuscle.displayName()>`.
+2. Iterate over all entries in `dictionary.getLiftShortcuts()`.
+3. For each entry, call `dictionary.getMusclesFor(entry.getKey())` and check if it `.contains(targetMuscle)`.
+4. If so, print `[<id>] -> <name>` and set `exerciseFound = true`.
+5. If no exercises were found after the full loop, display a no-results message and prompt the user to use `tag-muscle`.
+
+---
+
+#### Parser-level behavior
+
+**`parseTagMuscle(arguments, dictionary, isTag)`** handles both `tag-muscle` and `untag-muscle` via a shared method, with the `isTag` boolean determining which command is returned:
+
+1. Split arguments into two parts: shortcut ID and muscle group name.
+2. Parse the ID as an integer; throw `FitLoggerException` if not numeric.
+3. Verify the ID exists in `dictionary.getLiftShortcuts()`; throw if not found.
+4. Normalise the muscle group string with `.toUpperCase().replace(' ', '_')` and validate via `MuscleGroup.isValid(...)`.
+5. Return either `new TagMuscleCommand(...)` or `new UntagMuscleCommand(...)`.
+
+**`parseLiftMuscleGroup(arguments, dictionary)`** handles `muscle-groups`:
+
+1. Parse the argument as a positive integer shortcut ID.
+2. Verify the ID exists in `dictionary.getLiftShortcuts()`.
+3. Return `new LiftMuscleGroupsCommand(id, dictionary)`.
+
+**`parseTrainMuscle(arguments, dictionary)`** handles `train`:
+
+1. Normalise the muscle group string and validate via `MuscleGroup.isValid(...)`.
+2. Return `new TrainMuscleCommand(MuscleGroup.valueOf(muscleGroup), dictionary)`.
+
+Note that multi-word muscle groups (e.g. `upper back`) are supported by normalising spaces to underscores before enum lookup, so the user does not need to type `UPPER_BACK` themselves.
+
+---
+
+#### Persistence of muscle group tags
+
+Muscle group tags are saved and loaded as part of the shortcut row format in `data/fitlogger.txt`. When `Storage.saveData(...)` writes lift shortcuts, it calls `generateLiftString(id, name)`, which appends a fifth pipe-separated field containing a comma-separated list of muscle group display names if any tags exist:
+
+```
+S | lift | 2 | Bench Press | pecs,triceps,delts
+```
+
+During `loadData(...)`, the `parseShortcut(fields)` method checks for the presence of this fifth field. If found, it splits on commas, normalises each entry to `UPPER_CASE_WITH_UNDERSCORES`, validates via `MuscleGroup.isValid(...)`, and calls `dictionary.tagMuscles(id, MuscleGroup.valueOf(...))` for each valid entry. Invalid or unrecognised muscle group strings are silently skipped.
+
+This means custom tagging (both user-added and default tags modified at runtime) persists across sessions without any separate storage mechanism.
+
+---
+
+#### Validation and error handling
+
+|Input error|Error message shown|
+|---|---|
+|Missing arguments for `tag-muscle` / `untag-muscle`|`Missing arguments.` + usage hint|
+|Fewer than 2 parts|`Invalid format.` + usage hint|
+|Non-numeric shortcut ID|`Input a valid shortcut ID.`|
+|ID not found in dictionary|`Shortcut does not exist in database.` + `view-database` hint|
+|Invalid muscle group name|`Muscle group does not exist in database.` + `view-muscle-groups` hint|
+|Missing argument for `train`|`Missing muscle group.` + usage hint|
+|Missing argument for `muscle-groups`|`Missing arguments.` + usage hint|
+|Non-numeric ID for `muscle-groups`|`Input a valid shortcut ID.`|
+
+---
+
+#### Design considerations
+
+**Aspect: Storage structure for muscle group metadata**
+
+- **Current choice: fifth pipe-separated field on the shortcut row** — reuses the existing `S | lift | <id> | <name>` row format by appending `| <muscle1>,<muscle2>`. No new row type is needed, and the field is optional, so rows without tags load correctly without any format migration.
+- **Alternative: separate row type (e.g. `M | <id> | <muscle>`)** — one row per tag, making individual tags easy to add or remove in the file. Rejected because it multiplies the number of rows for heavily tagged exercises and complicates the load order, since the shortcut row would need to appear before any of its tag rows.
+
+**Aspect: Shared abstract class for `TagMuscleCommand` and `UntagMuscleCommand`**
+
+- **Current choice: `EditMuscleTagCommand` as an intermediate abstract class** — stores `id`, `muscle`, and `dictionary` once, avoiding constructor duplication. Each subclass only implements `execute(...)`.
+- **Alternative: no intermediate class, duplicate fields in each command** — simpler hierarchy but violates DRY. Any future change to the shared constructor (e.g. adding validation) would need to be made in two places.
+
+**Aspect: Enum vs. string for muscle groups**
+
+- **Current choice: `MuscleGroup` enum** — provides compile-time safety, a fixed set of valid values, and a clean `displayName()` method for UI output. `MuscleGroup.isValid(String)` gives the parser a single source of truth for validation.
+- **Alternative: plain strings stored in a set** — more flexible but allows arbitrary typos to enter the system. Rejected because the set of muscle groups is fixed and well-known, making an enum the more appropriate structure.
+
 ### Notes for team writeups
 
 ### Command Architecture
