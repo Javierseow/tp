@@ -14,6 +14,7 @@ import fitlogger.command.TagMuscleCommand;
 import fitlogger.command.TrainMuscleCommand;
 import fitlogger.command.UntagMuscleCommand;
 import fitlogger.command.UpdateProfileCommand;
+import fitlogger.command.ViewCalendarCommand;
 import fitlogger.command.ViewDatabaseCommand;
 import fitlogger.command.ViewHistoryCommand;
 import fitlogger.command.ViewLastLiftCommand;
@@ -30,6 +31,7 @@ import fitlogger.workoutlist.WorkoutList;
 import fitlogger.exercisedictionary.ExerciseDictionary;
 
 import java.time.LocalDate;
+import java.time.YearMonth;
 import java.time.format.DateTimeParseException;
 
 public class Parser {
@@ -103,6 +105,9 @@ public class Parser {
 
         case "filter":
             return new FilterTypeCommand(arguments, dictionary);
+
+        case "view-calendar":
+            return parseViewCalendar(arguments);
 
         default:
             throw new FitLoggerException(
@@ -523,5 +528,19 @@ public class Parser {
      */
     public static String[] splitInput(String line, String splitCharacter, int maxSplit) {
         return line.trim().split("\\s*" + splitCharacter + "\\s*", maxSplit);
+    }
+
+    private static Command parseViewCalendar(String arguments) throws FitLoggerException {
+        try {
+            if (arguments.isBlank()) {
+                // Default to current month if no arguments
+                return new ViewCalendarCommand(YearMonth.now());
+            }
+            // Expected format: YYYY-MM
+            return new ViewCalendarCommand(YearMonth.parse(arguments));
+        } catch (DateTimeParseException e) {
+            throw new FitLoggerException(
+                    "Invalid calendar format. Use YYYY-MM (e.g., view-calendar 2026-04)");
+        }
     }
 }
