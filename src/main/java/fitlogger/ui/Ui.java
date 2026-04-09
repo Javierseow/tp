@@ -5,7 +5,6 @@ import fitlogger.workout.StrengthWorkout;
 import fitlogger.workout.Workout;
 import fitlogger.exercisedictionary.ExerciseDictionary;
 import fitlogger.workout.RunWorkout;
-import fitlogger.workout.StrengthWorkout;
 
 import java.util.List;
 import java.util.Scanner;
