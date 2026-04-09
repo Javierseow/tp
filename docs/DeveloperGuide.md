@@ -77,11 +77,9 @@ accepts `description` only as a backward-compatible alias.
 
 #### UML diagrams
 
-Class diagram source:
-- [EditCommandClassDiagram.puml](diagrams/EditCommandClassDiagram.puml)
+![EditCommandClassDiagram](images/EditCommandClassDiagram.png)
 
-Sequence diagram source:
-- [EditCommandSequenceDiagram.puml](diagrams/EditCommandSequenceDiagram.puml)
+![EditCommandSequenceDiagram](images/EditCommandSequenceDiagram.png)
 
 #### Component-level behavior
 
@@ -173,11 +171,9 @@ This design keeps parsing and command behavior focused while preserving compatib
 
 #### UML diagrams
 
-Class diagram source:
-- [DeleteCommandClassDiagram.puml](diagrams/DeleteCommandClassDiagram.puml)
+![DeleteCommandClassDiagram](images/DeleteCommandClassDiagram.png)
 
-Sequence diagram source:
-- [DeleteCommandSequenceDiagram.puml](diagrams/DeleteCommandSequenceDiagram.puml)
+![DeleteCommandSequenceDiagram](images/DeleteCommandSequenceDiagram.png)
 
 #### Component-level behavior
 
@@ -741,11 +737,9 @@ search-date <YYYY-MM-DD>
 
 #### UML diagrams
 
-Class diagram source:
-- [SearchDateCommandClassDiagram.puml](diagrams/SearchDateCommandClassDiagram.puml)
+![SearchDateCommandClassDiagram](images/SearchDateCommandClassDiagram.png)
 
-Sequence diagram source:
-- [SearchDateCommandSequenceDiagram.puml](diagrams/SearchDateCommandSequenceDiagram.puml)
+![SearchDateCommandSequenceDiagram](images/SearchDateCommandSequenceDiagram.png)
 
 #### Validation and edge cases
 
@@ -770,11 +764,9 @@ If save fails, the app now shows clear error messages instead of always implying
 
 #### UML diagrams
 
-Class diagram source:
-- [ExitCommandClassDiagram.puml](diagrams/ExitCommandClassDiagram.puml)
+![ExitCommandClassDiagram](images/ExitCommandClassDiagram.png)
 
-Sequence diagram source:
-- [ExitCommandSequenceDiagram.puml](diagrams/ExitCommandSequenceDiagram.puml)
+![ExitCommandSequenceDiagram](images/ExitCommandSequenceDiagram.png)
 
 ---
 
