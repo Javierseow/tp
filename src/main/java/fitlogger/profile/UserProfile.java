@@ -1,5 +1,8 @@
 package fitlogger.profile;
 
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
 /**
  * Represents the user's personal health profile.
  * Stores and manages user-specific data including name, weight, and height.
@@ -8,6 +11,7 @@ public class UserProfile {
     private String name;
     private double weight;
     private double height;
+    private static final Logger logger = Logger.getLogger(UserProfile.class.getName());
 
     /**
      * Initializes a new UserProfile with default null and sentinel values.
@@ -33,6 +37,7 @@ public class UserProfile {
      * @param name The name to be assigned to the profile.
      */
     public void setName(String name) {
+        logger.log(Level.INFO, "Updating profile name to: " + name);
         this.name = name;
     }
 
@@ -51,6 +56,7 @@ public class UserProfile {
      * @param weight The weight value to be stored.
      */
     public void setWeight(double weight) {
+        logger.log(Level.INFO, "Updating profile weight: " + weight);
         this.weight = weight;
     }
 
@@ -69,6 +75,7 @@ public class UserProfile {
      * @param height The height value to be stored.
      */
     public void setHeight(double height) {
+        logger.log(Level.INFO, "Updating profile height: " + height);
         this.height = height;
     }
 

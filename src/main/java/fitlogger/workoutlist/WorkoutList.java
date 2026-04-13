@@ -3,12 +3,15 @@ package fitlogger.workoutlist;
 import fitlogger.workout.Workout;
 
 import java.util.ArrayList;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * Represents a list of workouts.
  * Provides methods to manage the collection of workouts such as adding, deleting, and searching.
  */
 public class WorkoutList {
+    private static final Logger logger = Logger.getLogger(WorkoutList.class.getName());
     protected ArrayList<Workout> workouts;
 
     /**
@@ -24,6 +27,7 @@ public class WorkoutList {
      * @param workout The Workout object to be added.
      */
     public void addWorkout(Workout workout) {
+        logger.log(Level.INFO, "Adding workout: " + workout.getDescription());
         workouts.add(workout);
     }
 
@@ -33,6 +37,11 @@ public class WorkoutList {
      * @param indexToRemove The index of the workout to be removed.
      */
     public void deleteWorkout(int indexToRemove) {
+        if (indexToRemove >= 0 && indexToRemove < workouts.size()) {
+            logger.log(Level.INFO, "Deleting workout at index: " + indexToRemove);
+        } else {
+            logger.log(Level.WARNING, "Attempted to delete invalid index: " + indexToRemove);
+        }
         workouts.remove(indexToRemove);
     }
 
@@ -72,6 +81,7 @@ public class WorkoutList {
      * @return The Workout object at the specified index.
      */
     public Workout getWorkoutAtIndex(int index) {
+        assert index >= 0 && index < workouts.size() : "Index out of bounds in WorkoutList";
         return workouts.get(index);
     }
 

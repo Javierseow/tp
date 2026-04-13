@@ -7,11 +7,14 @@ import java.util.HashMap;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.Map;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 public class ExerciseDictionary {
     private final TreeMap<Integer, String> liftDictionary;
     private final TreeMap<Integer, String> runDictionary;
     private final Map<Integer, EnumSet<MuscleGroup>> liftMuscleGroups;
+    private static final Logger logger = Logger.getLogger(ExerciseDictionary.class.getName());
 
     public ExerciseDictionary() {
         this.liftDictionary = new TreeMap<>();
@@ -78,6 +81,7 @@ public class ExerciseDictionary {
     }
 
     public void tagMuscles(int id, MuscleGroup muscleGroup) {
+        logger.log(Level.INFO, "Tagging lift ID " + id + " with " + muscleGroup);
         liftMuscleGroups.putIfAbsent(id, EnumSet.noneOf(MuscleGroup.class));
         liftMuscleGroups.get(id).add(muscleGroup);
     }
