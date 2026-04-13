@@ -39,10 +39,10 @@ public class ViewShoeMileageCommand extends Command {
 
         if (daysLimit == -1) {
             ui.showMessage("Total shoe mileage (all time): " + String.format("%.2f", totalMileage) + "km"
-                    + " across " + numberOfRuns + " runs.");
+                    + " across " + numberOfRuns + " run(s).");
         } else {
-            ui.showMessage("Total shoe mileage (past " + daysLimit + " days): "
-                    + String.format("%.2f", totalMileage) + "km" + " across " + numberOfRuns + " runs.");
+            ui.showMessage("Total shoe mileage (past " + daysLimit + " day(s)): "
+                    + String.format("%.2f", totalMileage) + "km" + " across " + numberOfRuns + " run(s).");
         }
     }
 }
