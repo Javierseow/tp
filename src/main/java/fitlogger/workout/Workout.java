@@ -5,7 +5,7 @@ import fitlogger.exception.FitLoggerException;
 import java.time.LocalDate;
 
 /**
- * Represents an abstract workout in the FitLogger.command.FitLogger application.
+ * Represents an abstract workout in the FitLogger application.
  * This class serves as a base for specific workout types and contains
  * shared logic for storing a workout name and date.
  */

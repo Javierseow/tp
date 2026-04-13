@@ -77,7 +77,7 @@ public class Parser {
             return parseProfile(arguments);
 
         case "view-total-mileage":
-            return new ViewShoeMileageCommand();
+            return parseViewShoeMileage(arguments);
 
         case "edit":
             return parseEdit(arguments);
@@ -583,7 +583,7 @@ public class Parser {
     private static Command parseProfile(String arguments) throws FitLoggerException {
         if (arguments.isBlank()) {
             throw new FitLoggerException("Missing arguments for viewing/setting up profile.\n"
-                    + "Usage: profile view OR profile set <field> <value>");
+                    + "Usage: profile view/clear OR profile set <field> <value>");
         }
         String[] info = splitInput(arguments, " ", 3);
         assert info.length > 0 : "Profile arguments are missing";
@@ -617,11 +617,11 @@ public class Parser {
                     return new UpdateProfileCommand(null, -1, updatedHeightOrWeight);
                 default:
                     throw new FitLoggerException("Invalid profile action. \n"
-                            + "Usage: profile view OR profile set <field> <value>");
+                            + "Usage: profile view/clear OR profile set <field> <value>");
                 }
             default:
                 throw new FitLoggerException("Invalid profile action. \n"
-                        + "Usage: profile view OR profile set <field> <value>");
+                        + "Usage: profile view/clear OR profile set <field> <value>");
             }
         } catch (IndexOutOfBoundsException e) {
             throw new FitLoggerException(
@@ -638,7 +638,7 @@ public class Parser {
             }
             if (newValue < lowerBound || newValue > upperBound) {
                 throw new FitLoggerException("Your Height/Weight is unrealistically low/high.\n"
-                        + "Please ensure your values are correct, height in m and weight in Kg");
+                        + "Please ensure your values are correct, height in m and weight in kg");
             }
             return newValue;
         } catch (NumberFormatException e) {
@@ -725,10 +725,33 @@ public class Parser {
             if (count <= 0) {
                 throw new FitLoggerException("History count must be a positive integer.");
             }
+            if (count >= Parser.MAX_INTEGER_INPUT) {
+                throw new NumberFormatException();
+            }
             return new ViewHistoryCommand(count);
         } catch (NumberFormatException e) {
-            throw new FitLoggerException("Invalid format. Usage: history [number]\n" +
-                    "Number should be positive and below " + Parser.MAX_INTEGER_INPUT + ".");
+            throw new FitLoggerException("Invalid format. Usage: history [NUMBER]\n" +
+                    "NUMBER should be a positive integer and below " + Parser.MAX_INTEGER_INPUT + ".");
+        }
+    }
+
+    private static Command parseViewShoeMileage(String arguments) throws FitLoggerException {
+        if (arguments.isBlank()) {
+            return new ViewShoeMileageCommand();
+        }
+
+        try {
+            int days = Integer.parseInt(arguments.trim());
+            if (days < 0) {
+                throw new FitLoggerException("Number of days must be a non-negative integer.");
+            }
+            if (days >= Parser.MAX_INTEGER_INPUT) {
+                throw new NumberFormatException();
+            }
+            return new ViewShoeMileageCommand(days);
+        } catch (NumberFormatException e) {
+            throw new FitLoggerException("Invalid format. Usage: view-total-mileage [DAYS]\n"
+                    + "DAYS should be a non-negative integer and below " + Parser.MAX_INTEGER_INPUT + ".");
         }
     }
 }

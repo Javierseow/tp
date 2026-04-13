@@ -7,7 +7,10 @@ import fitlogger.workoutlist.WorkoutList;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-public class ClearProfileCommand extends Command {
+/**
+ * Command to reset all user profile fields to their default (unset) state.
+ */
+public class ClearProfileCommand extends ProfileCommand {
     private static final Logger logger = Logger.getLogger(ClearProfileCommand.class.getName());
 
     @Override

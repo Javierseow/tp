@@ -238,6 +238,10 @@ public class Storage {
 
         String description = fields[INDEX_DESCRIPTION].trim();
         LocalDate date = parseDate(fields[INDEX_DATE]);
+        if (date.isAfter(LocalDate.now())) {
+            throw new IllegalArgumentException("Run date cannot be in the future: " + date);
+        }
+
         double distance = parseDouble(fields[INDEX_RUN_DISTANCE], "distance");
         double duration = parseDouble(fields[INDEX_RUN_DURATION], "duration");
 
@@ -263,6 +267,9 @@ public class Storage {
 
         String description = fields[INDEX_DESCRIPTION].trim();
         LocalDate date = parseDate(fields[INDEX_DATE]);
+        if (date.isAfter(LocalDate.now())) {
+            throw new IllegalArgumentException("Lift date cannot be in the future: " + date);
+        }
         double weight = parseDouble(fields[INDEX_STRENGTH_WEIGHT], "weight");
         int sets = parseInt(fields[INDEX_STRENGTH_SETS], "sets");
         int reps = parseInt(fields[INDEX_STRENGTH_REPS], "reps");
