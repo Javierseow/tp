@@ -30,7 +30,8 @@ else valid index
 		Cmd -> Cmd : dispatch field (reps)
 		Cmd -> StrengthWorkout : setReps(10)
 		Cmd -> Workouts : getWorkouts()
-		Cmd -> Storage : saveData(workouts, profile)
+		Workouts --> Cmd : workoutList
+		Cmd -> Storage : saveData(workoutList, profile)
 		alt save succeeds
 			Storage --> Cmd : true
 			Cmd -> Ui : showMessage("Updated workout 2: ...")

@@ -10,6 +10,8 @@ import fitlogger.ui.Ui;
 import fitlogger.workoutlist.WorkoutList;
 import fitlogger.exercisedictionary.ExerciseDictionary;
 
+import java.util.NoSuchElementException;
+
 public class FitLogger {
     private Ui ui;
     private Storage storage;
@@ -43,6 +45,8 @@ public class FitLogger {
                 isExit = c.isExit();
             } catch (FitLoggerException e) {
                 ui.showError(e.getMessage());
+            } catch (NoSuchElementException e) {
+                isExit = true;
             } catch (Exception e) {
                 ui.showError("Unexpected error: " + e.getMessage());
             }

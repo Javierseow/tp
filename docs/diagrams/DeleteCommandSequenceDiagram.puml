@@ -6,6 +6,7 @@ participant ":FitLogger" as Main
 participant ":Parser" as Parser
 participant "command:DeleteCommand" as Cmd
 participant ":WorkoutList" as Workouts
+participant ":Workout" as Workout
 participant ":Storage" as Storage
 participant ":Ui" as Ui
 
@@ -20,16 +21,20 @@ deactivate Parser
 Main -> Cmd : execute(storage, workouts, ui, profile)
 activate Cmd
 
+Cmd -> Workouts : getSize()
 alt valid index within range
-  Cmd -> Workouts : getSize()
   Cmd -> Workouts : getWorkoutAtIndex(2)
+  Workouts --> Cmd : workout
+  Cmd -> Workout : getDescription()
+  Workout --> Cmd : deletedWorkoutName
   note right of Cmd
     Description is read from the
     target workout before deletion.
   end note
   Cmd -> Workouts : deleteWorkout(2)
   Cmd -> Workouts : getWorkouts()
-  Cmd -> Storage : saveData(workouts, profile)
+  Workouts --> Cmd : workoutList
+  Cmd -> Storage : saveData(workoutList, profile)
   alt save succeeds
     Storage --> Cmd : true
     Cmd -> Ui : showMessage("Deleted workout: ...")
@@ -38,7 +43,6 @@ alt valid index within range
     Cmd -> Ui : showError("Failed to save workouts to disk...")
   end
 else out-of-range index
-  Cmd -> Workouts : getSize()
   Cmd -> Ui : showMessage("Invalid workout index: ...")
 end
 

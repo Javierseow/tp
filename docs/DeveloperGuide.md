@@ -8,7 +8,16 @@
 
 ## Design & implementation
 
-{Describe the design and implementation of the product. Use UML diagrams and short code snippets where applicable.}
+### Architecture overview
+
+FitLogger follows a command-driven architecture. The main application loop reads one line of user input,
+passes it to `Parser`, and executes the returned `Command` object polymorphically. Commands that modify
+the workout data ask `Storage` to persist the updated state before reporting the result through `Ui`.
+
+The architecture diagram below gives a high-level view of the main components before the later sections
+zoom in on individual commands such as `edit`, `delete`, `search-date`, and `exit`.
+
+![ArchitectureDiagram](images/ArchitectureDiagram.png)
 
 #### Implementation
 
@@ -785,7 +794,7 @@ If save fails, the app now shows clear error messages instead of always implying
 
 #### Purpose and user value
 
-FitLogger records diagnostic information for troubleshooting without cluttering the command-line interface. This keeps normal user output readable while still preserving useful execution details for developers.
+FitLogger records command-level diagnostic information for troubleshooting without cluttering the command-line interface. This keeps normal command output readable while still preserving useful execution details for developers.
 
 #### Design overview
 
@@ -795,6 +804,8 @@ FitLogger records diagnostic information for troubleshooting without cluttering 
 4. `Command` also configures logging in a static initializer so command tests and direct command construction use the same non-console logging behavior.
 
 If the log file cannot be created, logging is disabled instead of printing log records into the user-facing terminal.
+
+This logging configuration applies to messages emitted through Java's `Logger` API, such as command execution diagnostics. `Storage` owns its own save-file recovery behavior and may still print user-visible warnings when it skips corrupted lines or encounters file-system problems during persistence.
 
 ---
 
@@ -816,7 +827,7 @@ At the architecture level, `Storage` sits between the command layer and the file
 
 #### saveData() — Sequence of events
 
-![SaveDataSequenceDiagram](diagrams/SaveDataSequenceDiagram.png)
+![SaveDataSequenceDiagram](images/SaveDataSequenceDiagram.png)
 
 `saveData()` performs the following steps:
 
@@ -830,7 +841,7 @@ At the architecture level, `Storage` sits between the command layer and the file
 
 #### loadData() — Sequence of events
 
-![LoadDataSequenceDiagram](diagrams/LoadDataSequenceDiagram.png)
+![LoadDataSequenceDiagram](images/LoadDataSequenceDiagram.png)
 
 `loadData()` performs the following steps:
 
@@ -891,7 +902,7 @@ Example: `lastlift Bench Press`
 
 #### Class-level design
 
-![ViewLastLiftClassDiagram](diagrams/ViewLastLiftClassDiagram.png)
+![ViewLastLiftClassDiagram](images/ViewLastLiftClassDiagram.png)
 
 `ViewLastLiftCommand` extends the abstract `Command` base class and holds the
 target `exerciseId` as its only state. It depends on `WorkoutList` to search
@@ -900,7 +911,7 @@ it is a pure read operation.
 
 #### Sequence of events
 
-![ViewLastLiftSequenceDiagram](diagrams/ViewLastLiftSequenceDiagram.png)
+![ViewLastLiftSequenceDiagram](images/ViewLastLiftSequenceDiagram.png)
 
 `ViewLastLiftCommand.execute(...)` performs the following steps:
 
@@ -946,7 +957,7 @@ Example: `pr Bench Press`
 
 #### Class-level design
 
-![ViewPrClassDiagram](diagrams/ViewPrClassDiagram.png)
+![ViewPrClassDiagram](images/ViewPrClassDiagram.png)
 
 `ViewPrCommand` extends the abstract `Command` base class. Like
 `ViewLastLiftCommand`, it holds only `exerciseId` as state and is a pure
@@ -955,7 +966,7 @@ stopping at the first match, in order to find the maximum value.
 
 #### Sequence of events
 
-![ViewPrSequenceDiagram](diagrams/ViewPrSequenceDiagram.png)
+![ViewPrSequenceDiagram](images/ViewPrSequenceDiagram.png)
 
 `ViewPrCommand.execute(...)` performs the following steps:
 
@@ -1202,7 +1213,7 @@ Unlike "ready-to-run" implementations, FitLogger's commands are **stateless rega
 but **stateful regarding user input**. They are instantiated with arguments by the `Parser` but only gain 
 access to application data (`WorkoutList`) and persistence (`Storage`) at the moment of execution.
 
-![Command Class Diagram](../out/command-design/command-design.png)
+![Command Class Diagram](images/command-design.png)
 
 ---
 

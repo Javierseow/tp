@@ -20,9 +20,11 @@ deactivate Parser
 Main -> Cmd : execute(storage, workouts, ui, profile)
 activate Cmd
 
-loop for each workout in list
+loop i = 0 to workouts.getSize() - 1
 	Cmd -> Workouts : getWorkoutAtIndex(i)
+	Workouts --> Cmd : workout
 	Cmd -> Workout : getDate()
+	Workout --> Cmd : date
 	Cmd -> Cmd : compare targetDate.equals(date)
 	Cmd -> Cmd : add match to matchingWorkouts (if equal)
 end

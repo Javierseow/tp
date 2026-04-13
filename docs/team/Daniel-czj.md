@@ -56,10 +56,28 @@ My main focus was improving workout editing and deletion workflows, adding date-
 - Updated command architecture descriptions to match current `execute(storage, workouts, ui, profile)` signature.
 
 ### Contributions to Team-Based Tasks
+- [Pull Requests authored]-https://github.com/AY2526S2-CS2113-F09-1/tp/pulls?q=is%3Apr+author%3Adaniel-czj
 - Contributed feature implementation and bug-fix integration across command, parser, and tests.
 - Supported command-related quality improvements and consistency checks before submission.
+
+**UML diagrams contributed:**
+
+| Diagram | Type |
+|---|---|
+| `EditCommandClassDiagram` | Class |
+| `EditCommandSequenceDiagram` | Sequence |
+| `ExitCommandClassDiagram` | Class |
+| `ExitCommandSequenceDiagram` | Sequence |
+| `DeleteCommandClassDiagram` | Class |
+| `DeleteCommandSequenceDiagram` | Sequence |
+| `SearchDateCommandClassDiagram` | Class |
+| `SearchDateCommandSequenceDiagram` | Sequence |
+  `ArchitectureDiagram` | Architecture |
 
 ### Review and Mentoring Contributions
 - Reviewed pull requests:
   - PR #[65] (https://github.com/AY2526S2-CS2113-F09-1/tp/pull/65)
+  - PR #[71] (https://github.com/AY2526S2-CS2113-F09-1/tp/pull/71)
+  - PR #[135] (https://github.com/AY2526S2-CS2113-F09-1/tp/pull/135)
+
 - Provided implementation feedback on parser and command behavior consistency, especially for double parsing and storage handling.

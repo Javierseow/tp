@@ -21,7 +21,8 @@ Main -> Cmd : execute(storage, workouts, ui, profile)
 activate Cmd
 
 Cmd -> Workouts : getWorkouts()
-Cmd -> Storage : saveData(workouts, profile)
+Workouts --> Cmd : workoutList
+Cmd -> Storage : saveData(workoutList, profile)
 
 alt save succeeds
 	Storage --> Cmd : true

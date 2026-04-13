@@ -1,0 +1,43 @@
+@startuml
+title FitLogger architecture overview
+
+skinparam componentStyle rectangle
+
+package "FitLogger" {
+  [FitLogger] as App
+  [Parser] as Parser
+  [Command] as Command
+  [WorkoutList] as WorkoutList
+  [Workout] as Workout
+  [ExerciseDictionary] as ExerciseDictionary
+  [Ui] as Ui
+  [Storage] as Storage
+  [UserProfile] as UserProfile
+}
+
+database "data/fitlogger.txt" as DataFile
+folder "logs/" as Logs
+
+App --> Ui : reads user input
+App --> Storage : loadData(profile)
+App --> Parser : parse(input, workouts, dictionary)
+Parser --> Command : creates command
+Parser --> ExerciseDictionary : resolves shortcuts
+App --> Command : execute(...)
+Command --> Ui : shows output
+Command --> WorkoutList : reads/updates workouts
+WorkoutList --> Workout : contains
+Command --> UserProfile : reads/updates profile
+Command --> ExerciseDictionary : reads/updates exercises
+Command --> Storage : save/load data
+Storage --> ExerciseDictionary : loads/saves shortcuts
+Storage --> DataFile : persists workouts/profile
+Command ..> Logs : writes diagnostic logs
+
+note right of App
+  Creates and owns the shared Ui,
+  Storage, WorkoutList, UserProfile,
+  and ExerciseDictionary instances.
+end note
+
+@enduml

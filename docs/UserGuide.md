@@ -152,8 +152,8 @@ Important:
 - Decimal fields (`weight`, `distance`, `duration`) must use normal decimal notation, not `NaN`, `Infinity`, or scientific notation.
 - Integer fields (`sets`, `reps`) must be whole numbers from 1 to 1,000,000.
 
-Invalid input example:
-`edit 1 weight/abc`
+Invalid input example, assuming workout 2 is a lift workout:
+`edit 2 weight/abc`
 
 Expected error:
 `Invalid weight value: abc`
@@ -637,7 +637,9 @@ When you enter data, the parser checks for the following:
 - **Logic Bounds:** The parser prevents "impossible" data. For example, setting a height of `0.1m` or a weight of `1000kg` will trigger a warning to ensure your profile remains accurate.
 
 #### Logging
-FitLogger keeps diagnostic logs in `logs/fitlogger.log` for troubleshooting. These log messages are not printed in the command window during normal use, so user-facing output stays focused on command results and errors.
+FitLogger keeps command-level diagnostic logs in `logs/fitlogger.log` for troubleshooting. These Java logger messages are not printed in the command window during normal use, so user-facing output stays focused on command results and errors.
+
+Storage-related save-file warnings are handled separately by the `Storage` component. For example, if `data/fitlogger.txt` is manually corrupted, inaccessible, or blocked by the operating system during save/load, Storage may print a warning about the affected save file in addition to the command-level error message.
 
 #### Error Handling Strategy
 If a command fails, FitLogger will not crash. Instead, it will:

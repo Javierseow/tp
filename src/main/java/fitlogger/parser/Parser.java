@@ -253,6 +253,9 @@ public class Parser {
                 throw new NumberFormatException();
             }
             weight = Double.parseDouble(weightText);
+            if (!Double.isFinite(weight)) {
+                throw new NumberFormatException();
+            }
             sets = parsePositiveIntegerWithinLimit(info[2].trim(), "Sets");
             reps = parsePositiveIntegerWithinLimit(info[3].trim(), "Reps");
         } catch (NumberFormatException e) {
