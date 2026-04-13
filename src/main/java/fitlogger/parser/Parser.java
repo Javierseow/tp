@@ -76,7 +76,7 @@ public class Parser {
             return parseProfile(arguments);
 
         case "view-total-mileage":
-            return new ViewShoeMileageCommand();
+            return parseViewShoeMileage(arguments);
 
         case "edit":
             return parseEdit(arguments);
@@ -645,10 +645,33 @@ public class Parser {
             if (count <= 0) {
                 throw new FitLoggerException("History count must be a positive integer.");
             }
+            if (count >= Parser.MAX_INTEGER_INPUT) {
+                throw new NumberFormatException();
+            }
             return new ViewHistoryCommand(count);
         } catch (NumberFormatException e) {
-            throw new FitLoggerException("Invalid format. Usage: history [number]\n" +
-                    "Number should be positive and below " + Parser.MAX_INTEGER_INPUT + ".");
+            throw new FitLoggerException("Invalid format. Usage: history [NUMBER]\n" +
+                    "NUMBER should be a positive integer and below " + Parser.MAX_INTEGER_INPUT + ".");
+        }
+    }
+
+    private static Command parseViewShoeMileage(String arguments) throws FitLoggerException {
+        if (arguments.isBlank()) {
+            return new ViewShoeMileageCommand();
+        }
+
+        try {
+            int days = Integer.parseInt(arguments.trim());
+            if (days <= 0) {
+                throw new FitLoggerException("Number of days must be a positive integer.");
+            }
+            if (days >= Parser.MAX_INTEGER_INPUT) {
+                throw new NumberFormatException();
+            }
+            return new ViewShoeMileageCommand(days);
+        } catch (NumberFormatException e) {
+            throw new FitLoggerException("Invalid format. Usage: view-total-mileage [DAYS]\n"
+                    + "DAYS should be a positive integer and below " + Parser.MAX_INTEGER_INPUT + ".");
         }
     }
 }

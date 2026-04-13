@@ -4,38 +4,45 @@ import fitlogger.profile.UserProfile;
 import fitlogger.storage.Storage;
 import fitlogger.ui.Ui;
 import fitlogger.workout.RunWorkout;
-import fitlogger.workout.Workout;
 import fitlogger.workoutlist.WorkoutList;
 
-/**
- * Command to calculate and display the cumulative distance of all run workouts.
- * Iterates through the workout list to sum the mileage from RunWorkout instances.
- */
-public class ViewShoeMileageCommand extends Command {
+import java.time.LocalDate;
 
-    /**
-     * Executes the command to calculate total mileage and display it via the UI.
-     *
-     * @param storage  The storage handler (not used in this specific command).
-     * @param workouts The list of all recorded workouts.
-     * @param ui       The user interface to display the result.
-     * @param profile  The user profile (not used in this specific command).
-     */
+public class ViewShoeMileageCommand extends Command {
+    private final int daysLimit;
+
+    public ViewShoeMileageCommand() {
+        this.daysLimit = -1;
+    }
+
+    public ViewShoeMileageCommand(int daysLimit) {
+        assert daysLimit > 0 : "Days limit must be positive";
+        this.daysLimit = daysLimit;
+    }
+
     @Override
     public void execute(Storage storage, WorkoutList workouts, Ui ui, UserProfile profile) {
         double totalMileage = 0;
-        int runWorkoutCount = 0;
+        int numberOfRuns = 0;
+        LocalDate cutoffDate = LocalDate.now().minusDays(daysLimit);
 
-        for (Workout workout : workouts.getWorkouts()) {
-            if (workout instanceof RunWorkout runWorkout) {
-                assert runWorkout.getDistance() >= 0 : "Distance cannot be negative";
-                totalMileage += runWorkout.getDistance();
-                runWorkoutCount++;
+        for (int i = 0; i < workouts.getSize(); i++) {
+            if (workouts.getWorkoutAtIndex(i) instanceof RunWorkout) {
+                RunWorkout run = (RunWorkout) workouts.getWorkoutAtIndex(i);
+
+                if (daysLimit == -1 || !run.getDate().isBefore(cutoffDate)) {
+                    totalMileage += run.getDistance();
+                    numberOfRuns++;
+                }
             }
         }
 
-        String unitSuffix = (runWorkoutCount == 1) ? " run." : " runs.";
-        ui.showMessage("Your total distance ran is " + String.format("%.2fkm", totalMileage) +
-                " across " + runWorkoutCount + unitSuffix);
+        if (daysLimit == -1) {
+            ui.showMessage("Total shoe mileage (all time): " + String.format("%.2f", totalMileage) + "km"
+                    + " across " + numberOfRuns + " runs.");
+        } else {
+            ui.showMessage("Total shoe mileage (past " + daysLimit + " days): "
+                    + String.format("%.2f", totalMileage) + "km" + " across " + numberOfRuns + " runs.");
+        }
     }
 }
