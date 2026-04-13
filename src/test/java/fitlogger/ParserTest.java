@@ -123,9 +123,10 @@ class ParserTest {
     @Test
     void addLift_overlargeWeight_throwsException() {
         String overlargeWeight = "2" + "0".repeat(308);
-        assertThrows(FitLoggerException.class,
+        FitLoggerException ex = assertThrows(FitLoggerException.class,
                 () -> Parser.parse("add-lift Squat w/" + overlargeWeight + " s/3 r/5",
                         workouts, dictionary));
+        assertTrue(ex.getMessage().contains("decimal number"));
     }
 
     @Test
