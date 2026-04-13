@@ -5,6 +5,9 @@ import fitlogger.storage.Storage;
 import fitlogger.ui.Ui;
 import fitlogger.workoutlist.WorkoutList;
 
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
 /**
  * Deletes a workout from the in-memory workout list by user-facing index.
  *
@@ -13,24 +16,26 @@ import fitlogger.workoutlist.WorkoutList;
  * </p>
  */
 public class DeleteCommand extends Command {
-    /** The workout index provided by the user for deletion. */
-    private final String workoutIndex;
+    private static final Logger LOGGER = Logger.getLogger(DeleteCommand.class.getName());
+
+    /** The one-based workout index provided by the user for deletion. */
+    private final int oneBasedIndex;
 
     /**
      * Creates a delete command with the target workout index.
      *
-     * @param workoutIndex The workout index to delete.
+     * @param oneBasedIndex The one-based workout index to delete.
      */
-    public DeleteCommand(String workoutIndex) {
-        this.workoutIndex = workoutIndex;
+    public DeleteCommand(int oneBasedIndex) {
+        this.oneBasedIndex = oneBasedIndex;
     }
 
     /**
      * Executes the delete operation and prints feedback to the user.
      *
      * <p>
-      * If the index is missing, non-numeric, non-positive, or out of range, a validation
-      * message is shown and no state is changed.
+      * If the parsed index is out of range, a validation message is shown and no state is
+      * changed.
      * </p>
      *
       * @param storage Storage component used to persist workouts and profile.
@@ -40,28 +45,17 @@ public class DeleteCommand extends Command {
      */
     @Override
     public void execute(Storage storage, WorkoutList workouts, Ui ui, UserProfile profile) {
-        if (workoutIndex == null || workoutIndex.isBlank()) {
-            ui.showMessage("Please specify a workout index to delete. Usage: delete <index>");
-            return;
-        }
+        assert storage != null : "Storage must not be null";
+        assert workouts != null : "WorkoutList must not be null";
+        assert ui != null : "Ui must not be null";
+        assert profile != null : "UserProfile must not be null";
 
-        String normalizedIndex = workoutIndex.trim();
-        final int oneBasedIndex;
-
-        try {
-            oneBasedIndex = Integer.parseInt(normalizedIndex);
-        } catch (NumberFormatException exception) {
-            ui.showMessage("Workout index must be a positive integer.");
-            return;
-        }
-
-        if (oneBasedIndex <= 0) {
-            ui.showMessage("Invalid workout index: " + oneBasedIndex);
-            return;
-        }
+        LOGGER.log(Level.INFO, "Delete requested for one-based index {0}", oneBasedIndex);
 
         int zeroBasedIndex = oneBasedIndex - 1;
         if (zeroBasedIndex < 0 || zeroBasedIndex >= workouts.getSize()) {
+            LOGGER.log(Level.WARNING, "Delete rejected: invalid one-based index {0}",
+                    oneBasedIndex);
             ui.showMessage("Invalid workout index: " + oneBasedIndex);
             return;
         }
@@ -70,9 +64,12 @@ public class DeleteCommand extends Command {
         workouts.deleteWorkout(zeroBasedIndex);
         boolean isSaved = storage.saveData(workouts.getWorkouts(), profile);
         if (!isSaved) {
+            LOGGER.log(Level.WARNING, "Delete applied in memory but save failed for index {0}",
+                    oneBasedIndex);
             ui.showError("Failed to save workouts to disk. Changes remain only in memory.");
             return;
         }
+        LOGGER.log(Level.INFO, "Delete succeeded for workout \"{0}\"", deletedWorkoutName);
         ui.showMessage("Deleted workout: " + deletedWorkoutName);
     }
 }

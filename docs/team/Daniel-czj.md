@@ -17,12 +17,20 @@ My main focus was improving workout editing and deletion workflows, adding date-
 - Improved `ExitCommand` save and feedback behavior.
 - Added save-failure handling paths for command execution with corresponding tests.
 - Added validation to reject invalid numeric values (`NaN`, `Infinity`) in workout creation/edit flows.
+- Hardened numeric parsing to reject scientific notation and overlarge numeric inputs in add/edit flows.
+- Added a 1,000,000 upper bound for workout indexes, shortcut IDs, sets, and reps to prevent integer-overflow edge cases and unrealistic inputs.
+- Tightened parser arity checks for `delete`, `search-date`, and `exit` so extra arguments are rejected instead of being silently ignored.
+- Redirected Java logging to `logs/fitlogger.log` so diagnostic logs remain available without cluttering the CLI output.
 - Added constructor-level safeguards in workout/domain objects to enforce valid object state at creation time.
 
 ### Bug Fixes and Technical Improvements
 - Parser numeric parsing fix:
   - Updated parser height/weight parse logic to use:
     - `double newValue = Double.parseDouble(value);`
+- Parser validation hardening:
+  - Added plain-decimal validation for workout weight, distance, and duration fields.
+  - Added bounded integer parsing for indexes, shortcut IDs, sets, and reps.
+  - Added regression tests for scientific notation, integer overflow, extra command arguments, and overlarge values.
 - Profile display formatting improvement:
   - Updated height display formatting to:
     - `String.format("%.2fm", profile.getHeight())`
@@ -34,6 +42,7 @@ My main focus was improving workout editing and deletion workflows, adding date-
   - `delete`
   - `search-date`
   - `exit`
+- Documented numeric input limits, plain-decimal requirements, and logging behavior.
 - Added practical usage examples, invalid-input examples, and expected error outputs.
 
 
@@ -43,6 +52,7 @@ My main focus was improving workout editing and deletion workflows, adding date-
   - `DeleteCommand`
   - `search-date`
   - command save-failure handling
+- Added design notes for parser validation hardening and file-based logging.
 - Updated command architecture descriptions to match current `execute(storage, workouts, ui, profile)` signature.
 
 ### Contributions to Team-Based Tasks

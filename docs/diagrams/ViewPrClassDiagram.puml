@@ -1,4 +1,5 @@
 @startuml
+hide circle
 abstract class Command {
     +execute(storage, workouts, ui, profile)
     +isExit() : boolean

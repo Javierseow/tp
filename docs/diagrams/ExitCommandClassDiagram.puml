@@ -1,0 +1,38 @@
+@startuml
+hide circle
+skinparam classAttributeIconSize 0
+
+abstract class Command {
+	+execute(...) : void
+	+isExit() : boolean
+}
+
+class ExitCommand {
+	+execute(...) : void
+	+isExit() : boolean
+}
+
+class WorkoutList {
+	+getWorkouts() : List<Workout>
+}
+
+class Storage {
+	+saveData(...) : boolean
+}
+
+class Ui {
+	+showMessage(message : String) : void
+	+showError(message : String) : void
+	+showGoodbye() : void
+}
+
+class UserProfile
+abstract class Workout
+
+Command <|-- ExitCommand
+ExitCommand ..> Storage
+ExitCommand ..> WorkoutList
+ExitCommand ..> Ui
+ExitCommand ..> UserProfile
+WorkoutList --> "*" Workout
+@enduml

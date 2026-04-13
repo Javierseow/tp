@@ -52,6 +52,7 @@ class SearchDateCommandTest {
         SearchDateCommand command = new SearchDateCommand(LocalDate.of(2026, 3, 16));
         command.execute(storage, workouts, ui, profile);
 
+        assertEquals(1, ui.outputs.size());
         assertTrue(ui.outputs.contains("No workouts found."));
     }
 

@@ -2,6 +2,7 @@ package fitlogger;
 
 import fitlogger.command.Command;
 import fitlogger.exception.FitLoggerException;
+import fitlogger.logging.LoggingConfig;
 import fitlogger.parser.Parser;
 import fitlogger.profile.UserProfile;
 import fitlogger.storage.Storage;
@@ -17,6 +18,7 @@ public class FitLogger {
     private ExerciseDictionary dictionary;
 
     public FitLogger() {
+        LoggingConfig.configure();
         ui = new Ui();
         storage = new Storage();
         workouts = new WorkoutList();

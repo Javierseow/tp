@@ -18,8 +18,6 @@ The parsing logic is centralized in the `Parser#parse()` method. It follows a tw
 
 The following sequence diagram illustrates the internal logic of the `Parser` when a user inputs an `add-run` or `delete` command:
 
-![Parser Sequence Diagram](out/parserdesign/parserdesign.png)
-
 #### Design Considerations
 
 **Aspect: How the Parser is implemented**
@@ -31,6 +29,9 @@ The following sequence diagram illustrates the internal logic of the `Parser` wh
 
 **Aspect: Data Validation**
 * The parser ensures that no user-inputted text (like workout names) contains reserved characters (`|` or `/`) used by the `Storage` component. This prevents file corruption during save/load operations.
+* Integer inputs such as workout indexes, shortcut IDs, sets, and reps are capped at 1,000,000 to avoid accepting unrealistic values or integer-overflow edge cases.
+* Decimal workout values such as weight, distance, and duration are restricted to ordinary decimal notation. Inputs such as `NaN`, `Infinity`, or scientific notation (for example, `8e1`) are rejected before they can enter the workout model.
+* Commands with fixed arity, such as `delete`, `search-date`, and `exit`, reject extra arguments so the parser does not silently ignore accidental input.
 
 ### Enhancement 1: `EditCommand`
 
@@ -38,10 +39,10 @@ The following sequence diagram illustrates the internal logic of the `Parser` wh
 
 `EditCommand` lets users modify an existing workout entry without deleting and recreating it.
 This reduces friction when correcting common input mistakes (for example, wrong distance, duration,
-sets, reps, weight, name, or description) while preserving the original workout ordering.
+sets, reps, weight, or name) while preserving the original workout ordering.
 
 Supported fields:
-- For all workouts: `name`, `description`
+- For all workouts: `name`
 - For run workouts: `distance`, `duration`
 - For strength workouts: `weight`, `sets`, `reps`
 
@@ -71,6 +72,16 @@ Responsibilities remain clearly separated:
 - Command handles *execution logic and field dispatch*.
 - Workout classes enforce *domain invariants* through setter validation.
 
+Internally, the shared text field in `Workout` is still stored as `description`, but it represents a
+single user-facing workout name. `EditCommand` therefore documents `name` as the canonical field and
+accepts `description` only as a backward-compatible alias.
+
+#### UML diagrams
+
+![EditCommandClassDiagram](images/EditCommandClassDiagram.png)
+
+![EditCommandSequenceDiagram](images/EditCommandSequenceDiagram.png)
+
 #### Component-level behavior
 
 `EditCommand.execute(...)` performs the following steps:
@@ -91,19 +102,21 @@ The command is intentionally defensive:
 - Non-numeric numeric inputs are rejected.
 - Invalid domain values are rejected via `FitLoggerException`.
 - Save failure path is handled explicitly (error is shown, success message is not shown).
-- Name/description edits are validated against reserved storage delimiters (`|` and `/`) to 
+- Workout name edits are validated against reserved storage delimiters (`|` and `/`) to 
 prevent save-file corruption.
 
 #### Data integrity and validation decisions
 
 Key safeguards:
 
-- **Delimiter safety**: edited names/descriptions are rejected when they contain reserved storage separators.
+- **Delimiter safety**: edited workout names are rejected when they contain reserved storage separators.
 - **Finite numeric values**: `NaN` and `Infinity` are rejected for distance, duration, and weight.
+- **Plain decimal notation**: scientific notation is rejected for editable distance, duration, and weight fields to keep behavior aligned with the User Guide examples.
+- **Integer bounds**: edited sets and reps are capped at 1,000,000 to avoid overflow and unrealistic values.
 - **Domain constraints**:
   - distance, duration > 0
   - weight >= 0
-  - sets, reps > 0
+  - sets, reps > 0 and <= 1,000,000
 
 These rules prevent invalid in-memory state and malformed persisted data.
 
@@ -116,6 +129,7 @@ These rules prevent invalid in-memory state and malformed persisted data.
 - Type mismatch handling (for example, lift-only fields on run workouts).
 - Delimiter injection prevention for edited names.
 - Rejection of non-finite numeric values (`NaN`, `Infinity`).
+- Rejection of scientific notation and overlarge numeric values.
 
 This verifies robust behavior under realistic user mistakes and malformed input.
 
@@ -152,24 +166,24 @@ Supported formats:
 
 The command is intentionally simple and cohesive:
 
-1. Parser identifies the `delete` command and passes the raw argument string.
-2. `DeleteCommand` stores the user-supplied index text.
-3. During execution, the command validates the text as a positive one-based index.
+1. Parser identifies the `delete` command and validates that exactly one positive one-based index was provided.
+2. `DeleteCommand` stores the parsed index as command state.
+3. During execution, the command checks only runtime concerns such as index bounds and persistence.
 4. If the index is valid, the workout is removed from `WorkoutList`; otherwise, user sees validation feedback.
 
 This design keeps parsing and command behavior focused while preserving compatibility with the existing pipeline.
+
+#### UML diagrams
+
+![DeleteCommandClassDiagram](images/DeleteCommandClassDiagram.png)
+
+![DeleteCommandSequenceDiagram](images/DeleteCommandSequenceDiagram.png)
 
 #### Component-level behavior
 
 `DeleteCommand.execute(...)` performs:
 
-1. Empty input check:
-	- If blank, show usage guidance and return early.
-2. Index parsing and validation:
-  - Trim the input and parse it as a positive integer.
-  - If parsing fails, show `Workout index must be a positive integer.`
-  - If the parsed index is less than 1, show `Invalid workout index: <index>`.
-3. Deletion:
+1. Deletion:
   - Convert the one-based index to a zero-based list index.
   - If the zero-based index is out of range, show `Invalid workout index: <index>`.
   - Otherwise, delete the workout and show `Deleted workout: <name>`.
@@ -178,21 +192,25 @@ This approach avoids ambiguity and keeps deletion behavior predictable.
 
 #### Edge cases handled
 
-- Blank target text.
-- Non-numeric text.
-- Zero or negative indices.
 - Out-of-range indices larger than the current workout list size.
+- Save failure after a successful in-memory deletion.
 
 #### Testing strategy
 
 `DeleteCommandTest` verifies:
 
 - Index-based deletion success (one-based input behavior).
-- Blank-input usage message.
-- Rejection of non-numeric input.
-- Rejection of zero as an invalid index.
+- Out-of-range index handling at execution time.
 - Save is attempted only after a valid deletion.
 - Save failure path shows an error and suppresses deletion success message.
+
+`ParserTest` covers the syntax-level delete validation:
+
+- Blank-input usage message.
+- Rejection of non-numeric input.
+- Rejection of extra indexes such as `delete 1 2`.
+- Rejection of overflowing or overlarge indexes above 1,000,000.
+- Rejection of zero as an invalid index.
 
 This ensures the index-only deletion flow remains stable and regressions are caught early.
 
@@ -202,13 +220,11 @@ Given below is an example scenario of how `DeleteCommand` is processed.
 
 **Step 1.** The user enters a delete command, for example `delete 3`.
 
-**Step 2.** `Parser.parse(...)` identifies the `delete` command and creates a `DeleteCommand` with the raw argument.
+**Step 2.** `Parser.parse(...)` identifies the `delete` command, validates the index, and creates a `DeleteCommand` with the parsed one-based index.
 
-**Step 3.** In `DeleteCommand.execute(storage, workouts, ui, profile)`, the command first checks for empty input.
+**Step 3.** In `DeleteCommand.execute(storage, workouts, ui, profile)`, the command converts the one-based index to zero-based form and checks bounds.
 
-**Step 4.** The command parses the raw argument as a positive one-based index and rejects invalid input.
-
-**Step 5.** If the index is valid and within range, the workout is removed from `WorkoutList` and the user sees a deletion confirmation.
+**Step 4.** If the index is valid and within range, the workout is removed from `WorkoutList` and the user sees a deletion confirmation.
 Otherwise, the user sees an index validation message.
 
 ---
@@ -282,8 +298,8 @@ the command stateless until it runs.
    `splitInput(arguments, "w/|s/|r/", 4)`.
 3. Validate that exactly four parts were produced (name + three numeric fields).
 4. Validate the exercise name against reserved storage delimiters (`|` and `/`).
-5. Parse `weight` as a `double`, `sets` and `reps` as `int`; throw on parse failure.
-6. Apply domain constraints: weight >= 0, sets > 0, reps > 0.
+5. Parse `weight` as a plain decimal, and `sets` and `reps` as bounded integers; throw on parse failure.
+6. Apply domain constraints: weight >= 0, sets > 0, reps > 0, sets/reps <= 1,000,000.
 7. Construct and return `new AddWorkoutCommand(new StrengthWorkout(...))`.
 
 `AddWorkoutCommand.execute(...)` performs:
@@ -331,9 +347,11 @@ the full `EditCommand` design.
 | Missing arguments | `Missing arguments for add-lift.` + usage hint |
 | Missing flag (e.g. no `r/`) | `Invalid format for add-lift.` + usage hint |
 | Non-numeric weight/sets/reps | `Weight must be a decimal number; sets and reps must be integers.` |
+| Scientific notation weight (e.g. `8e1`) | `Weight must be a decimal number; sets and reps must be integers.` |
 | Negative weight | `Weight cannot be negative.` |
 | Zero or negative sets | `Sets must be a positive integer.` |
 | Zero or negative reps | `Reps must be a positive integer.` |
+| Sets or reps above 1,000,000 | `Sets/Reps must not exceed 1000000.` |
 | Name contains `\|` or `/` | `Exercise name must not contain '\|' or '/'` |
 
 #### Design considerations
@@ -429,9 +447,10 @@ Validation is split between `Parser.parseAddRun(...)` (format-level) and `RunWor
 |Missing arguments|`Missing arguments for add-run.` + usage hint|
 |Missing flag (e.g. no `d/`)|`Invalid format for add-run.` + usage hint|
 |Non-numeric distance/duration|Parse error with usage hint|
+|Scientific notation distance/duration|Parse error with usage hint|
 |Zero or negative distance|`Distance must be a positive number.`|
 |Zero or negative duration|`Duration must be a positive number.`|
-|Non-finite value (`NaN`, `Infinity`)|`Distance must be a positive number.` / `Duration must be a positive number.`|
+|Non-finite value (`NaN`, `Infinity`)|Parse error with usage hint|
 
 #### Design considerations
 
@@ -672,9 +691,9 @@ Using a shortcut ID in `add-lift` (e.g. `add-lift 2 w/80 s/3 r/8`) triggers a re
 
 ![Shortcut Resolution Sequence Diagram](images/ShortcutResolutionSequenceDiagram.png)
 
-The resolution logic is a try-catch around `Integer.parseInt(name)`:
-- If parsing succeeds, `dictionary.getLiftName(id)` is called. A `null` return means the ID does not exist, and a `FitLoggerException` is thrown pointing the user to `view-database`.
-- If `NumberFormatException` is thrown, the token is treated as a plain-text name and used as-is.
+The resolution logic first checks whether the name token contains only digits:
+- If it does, the token is parsed using `parsePositiveIntegerWithinLimit(...)` and resolved through the relevant dictionary. A `null` return means the ID does not exist, and a `FitLoggerException` is thrown pointing the user to `view-database`.
+- If it does not, the token is treated as a plain-text name and used as-is.
 
 This means numeric IDs and full names are both accepted with no special flag needed, and the resolution is entirely a parsing concern — `StrengthWorkout` and `AddWorkoutCommand` are unchanged.
 
@@ -685,8 +704,9 @@ This means numeric IDs and full names are both accepted with no special flag nee
 | Missing arguments | `Missing arguments.` + usage hint |
 | Fewer than 3 parts | `Invalid format.` + usage hint |
 | Type not `lift` or `run` | `Shortcut type must be 'lift' or 'run'.` |
-| Non-numeric ID | `Shortcut ID must be a number.` |
-| ID ≤ 0 | `Shortcut ID must be a positive number.` |
+| Non-numeric ID | `Shortcut ID must be a positive integer.` |
+| ID <= 0 | `Shortcut ID must be a positive integer.` |
+| ID above 1,000,000 | `Shortcut ID must not exceed 1000000.` |
 | Name contains `\|` or `/` | `Shortcut name must not contain '\|' or '/'` |
 | ID not found in database | `Shortcut ID [n] does not exist. Type 'view-database' to see available shortcuts.` |
 
@@ -722,12 +742,20 @@ search-date <YYYY-MM-DD>
 2. `parseSearchDate(...)` validates date presence and format (`LocalDate.parse`).
 3. A `SearchDateCommand` is returned and executed polymorphically.
 4. `SearchDateCommand.execute(...)` scans `WorkoutList` and collects matching dates.
-5. `Ui.showWorkoutList(...)` prints matching workouts, or `No workouts found.` for empty results.
+5. If matches exist, `Ui.showWorkoutList(...)` prints them under a dated heading.
+6. If there are no matches, the command prints only `No workouts found.`.
+
+#### UML diagrams
+
+![SearchDateCommandClassDiagram](images/SearchDateCommandClassDiagram.png)
+
+![SearchDateCommandSequenceDiagram](images/SearchDateCommandSequenceDiagram.png)
 
 #### Validation and edge cases
 
 - Missing date throws `FitLoggerException` with usage hint.
 - Invalid date format throws `FitLoggerException` with usage hint.
+- Extra arguments after the date throw `FitLoggerException` with usage hint.
 - Empty result set is handled cleanly in UI.
 
 ---
@@ -744,6 +772,29 @@ If save fails, the app now shows clear error messages instead of always implying
 1. `Storage.saveData(...)` returns `boolean` (`true` for success, `false` on `IOException`).
 2. `AddWorkoutCommand`, `DeleteCommand`, `EditCommand`, and `ExitCommand` check that result.
 3. On failure, commands show `ui.showError(...)` and skip success-only messages.
+
+#### UML diagrams
+
+![ExitCommandClassDiagram](images/ExitCommandClassDiagram.png)
+
+![ExitCommandSequenceDiagram](images/ExitCommandSequenceDiagram.png)
+
+---
+
+### Logging Design
+
+#### Purpose and user value
+
+FitLogger records diagnostic information for troubleshooting without cluttering the command-line interface. This keeps normal user output readable while still preserving useful execution details for developers.
+
+#### Design overview
+
+1. `LoggingConfig.configure()` removes the default console handlers from the root Java logger.
+2. It registers a `FileHandler` that appends log entries to `logs/fitlogger.log`.
+3. `FitLogger` configures logging during normal startup.
+4. `Command` also configures logging in a static initializer so command tests and direct command construction use the same non-console logging behavior.
+
+If the log file cannot be created, logging is disabled instead of printing log records into the user-facing terminal.
 
 ---
 
@@ -939,6 +990,191 @@ stopping at the first match, in order to find the maximum value.
 - This decision keeps the PR definition intuitive — heavier lift = better PR
   for strength; longer run = better PR for endurance.
 
+
+### Enhancement 13: ViewCalendarCommand and ASCII Calendar Generation
+
+#### Purpose and user value
+The `ViewCalendarCommand` provides a visual "at-a-glance" view of a user's training consistency. By rendering a traditional monthly grid in the terminal, users can quickly identify gaps in their training and visualize their workout "streaks" without scanning a long text history.
+
+Command format:
+```
+view-calendar <YYYY-MM>
+```
+
+Example: `view-calendar 2026-04`
+
+#### Design overview
+This enhancement utilizes the java.time API to handle calendar logic and follows the standard FitLogger command pipeline:
+
+1. `Parser.parse(...)` routes the command to `Parser.parseViewCalendar(...)`.
+2. `YearMonth` is used as the primary data structure to represent the target month.
+3. `ViewCalendarCommand` extracts the "active days" from the `WorkoutList`.
+4. `Ui.showCalendar(...)` performs the complex ASCII grid rendering.
+
+#### Component-level behavior
+
+1. Data Collection (`ViewCalendarCommand#execute`)
+The command performs a linear scan of the `WorkoutList`. It uses a `HashSet<Integer>` to store the `dayOfMonth` for every workout that matches the `targetMonth`.
+    - Decision: A `Set` is used to ensure that multiple workouts on the same day do not cause duplicate highlighting or logic errors during rendering.
+
+2. Grid Rendering (`Ui#showCalendar`)
+The rendering logic in Ui is the most complex part of this enhancement:
+- It determines the **start day** of the month using `firstOfMonth.getDayOfWeek().getValue() % 7` to align Sunday to the first column.
+- It calculates the **number of days** in the month using `yearMonth.lengthOfMonth()`.
+- It uses a single loop from 1 to `daysInMonth`, using padding spaces for the first week and line breaks every Saturday.
+- **Highlighting**: For each day, it checks `if (activeDays.contains(day))`. If true, it wraps the day in `[ ]` brackets; otherwise, it pads it with spaces to maintain column alignment.
+
+#### Design considerations
+
+Aspect: Calendar Alignment
+- Current choice: Fixed-width `String.format("%2d")`: Ensures that single-digit days (1-9) and double-digit days (10-31) occupy the same horizontal space, preventing the grid from "shifting" and becoming unreadable.
+- Alternative: Simple tab characters `\t`: Rejected because terminal tab widths vary across different operating systems (Windows vs. Linux), which would break the ASCII alignment.
+
+#### Aspect: Date Library
+
+- Current choice: `java.time.YearMonth`: Perfectly encapsulates the requirement (Month + Year). It simplifies leap year handling and day-of-week calculations compared to the older `java.util.Calendar` API.
+
+---
+### Enhancement 14: Muscle Group Tagging System (`ExerciseDictionary` muscle methods, `TagMuscleCommand`, `UntagMuscleCommand`, `LiftMuscleGroupsCommand`, `ViewMuscleGroupCommand`, and `TrainMuscleCommand`)
+
+#### Purpose and user value
+
+The muscle group tagging system extends the exercise shortcut database to support muscle group metadata. Users can tag lift shortcuts with one or more muscle groups, then use that metadata to plan workouts (`train`), inspect exercises (`muscle-groups`), and filter history (`filter`).
+
+The system has five parts:
+
+- `TagMuscleCommand`: adds a muscle group tag to a lift shortcut.
+- `UntagMuscleCommand`: removes a muscle group tag from a lift shortcut.
+- `LiftMuscleGroupsCommand`: displays all muscle groups tagged to a specific lift shortcut.
+- `ViewMuscleGroupCommand`: displays all valid muscle groups available in the app.
+- `TrainMuscleCommand`: lists all lift shortcuts tagged with a given muscle group.
+
+The four default lift shortcuts ship with pre-loaded muscle group tags (e.g. Bench Press is pre-tagged with `pecs`, `triceps`, and `delts`). Tags added or removed by the user are persisted to the save file.
+
+---
+
+#### Class-level design
+
+`ExerciseDictionary` is the shared data model for this system. It holds muscle group data in a `Map<Integer, EnumSet<MuscleGroup>>` field called `liftMuscleGroups`, keyed by lift shortcut ID. `MuscleGroup` is an enum with 14 values representing distinct muscle groups, each with a `displayName()` method that returns a lowercase, space-separated string for UI output.
+
+`TagMuscleCommand` and `UntagMuscleCommand` both extend the abstract `EditMuscleTagCommand`, which stores the shared fields `id`, `muscle`, and `dictionary`. This intermediate layer avoids duplicating constructor logic across the two commands while keeping each command's `execute(...)` method focused on a single operation.
+
+`LiftMuscleGroupsCommand`, `ViewMuscleGroupCommand`, and `TrainMuscleCommand` extend `Command` directly, as they have no shared state with the tag editing commands.
+
+---
+
+#### Component-level behavior
+
+**`ExerciseDictionary` — muscle group methods**
+
+- `tagMuscles(int id, MuscleGroup muscleGroup)`: calls `putIfAbsent` to initialise an `EnumSet` for the ID if one does not exist, then adds the muscle group.
+- `untagMuscles(int id, MuscleGroup muscleGroup)`: retrieves the set for the ID and removes the muscle group. If no set exists, returns silently.
+- `getMusclesFor(int id)`: returns the `EnumSet` for the ID, or an empty `EnumSet` if none exists.
+
+`EnumSet` was chosen over `HashSet` because all elements are of a known enum type, making iteration ordered and memory usage compact.
+
+**`TagMuscleCommand.execute(...)`**
+
+1. Call `dictionary.tagMuscles(id, muscle)`.
+2. Display confirmation: `Added <muscle.displayName()> to lift <id>`.
+
+**`UntagMuscleCommand.execute(...)`**
+
+1. Call `dictionary.untagMuscles(id, muscle)`.
+2. Display confirmation: `Removed <muscle.displayName()> from lift ID: <id>`.
+
+**`LiftMuscleGroupsCommand.execute(...)`**
+
+1. Retrieve the exercise name via `dictionary.getLiftName(id)`.
+2. Retrieve the muscle group set via `dictionary.getMusclesFor(id)`.
+3. If the set is empty, display `No muscle groups tagged for <name> (ID: <id>).`
+4. Otherwise display `Muscle groups for <name>: <set>`.
+
+**`ViewMuscleGroupCommand.execute(...)`**
+
+1. Delegates entirely to `ui.showMuscleGroups()`, which iterates over `MuscleGroup.values()` and prints each `displayName()`.
+
+**`TrainMuscleCommand.execute(...)`**
+
+1. Display a header: `Exercises targeting: <targetMuscle.displayName()>`.
+2. Iterate over all entries in `dictionary.getLiftShortcuts()`.
+3. For each entry, call `dictionary.getMusclesFor(entry.getKey())` and check if it `.contains(targetMuscle)`.
+4. If so, print `[<id>] -> <name>` and set `exerciseFound = true`.
+5. If no exercises were found after the full loop, display a no-results message and prompt the user to use `tag-muscle`.
+
+---
+
+#### Parser-level behavior
+
+**`parseTagMuscle(arguments, dictionary, isTag)`** handles both `tag-muscle` and `untag-muscle` via a shared method, with the `isTag` boolean determining which command is returned:
+
+1. Split arguments into two parts: shortcut ID and muscle group name.
+2. Parse the ID as an integer; throw `FitLoggerException` if not numeric.
+3. Verify the ID exists in `dictionary.getLiftShortcuts()`; throw if not found.
+4. Normalise the muscle group string with `.toUpperCase().replace(' ', '_')` and validate via `MuscleGroup.isValid(...)`.
+5. Return either `new TagMuscleCommand(...)` or `new UntagMuscleCommand(...)`.
+
+**`parseLiftMuscleGroup(arguments, dictionary)`** handles `muscle-groups`:
+
+1. Parse the argument as a positive integer shortcut ID.
+2. Verify the ID exists in `dictionary.getLiftShortcuts()`.
+3. Return `new LiftMuscleGroupsCommand(id, dictionary)`.
+
+**`parseTrainMuscle(arguments, dictionary)`** handles `train`:
+
+1. Normalise the muscle group string and validate via `MuscleGroup.isValid(...)`.
+2. Return `new TrainMuscleCommand(MuscleGroup.valueOf(muscleGroup), dictionary)`.
+
+Note that multi-word muscle groups (e.g. `upper back`) are supported by normalising spaces to underscores before enum lookup, so the user does not need to type `UPPER_BACK` themselves.
+
+---
+
+#### Persistence of muscle group tags
+
+Muscle group tags are saved and loaded as part of the shortcut row format in `data/fitlogger.txt`. When `Storage.saveData(...)` writes lift shortcuts, it calls `generateLiftString(id, name)`, which appends a fifth pipe-separated field containing a comma-separated list of muscle group display names if any tags exist:
+
+```
+S | lift | 2 | Bench Press | pecs,triceps,delts
+```
+
+During `loadData(...)`, the `parseShortcut(fields)` method checks for the presence of this fifth field. If found, it splits on commas, normalises each entry to `UPPER_CASE_WITH_UNDERSCORES`, validates via `MuscleGroup.isValid(...)`, and calls `dictionary.tagMuscles(id, MuscleGroup.valueOf(...))` for each valid entry. Invalid or unrecognised muscle group strings are silently skipped.
+
+This means custom tagging (both user-added and default tags modified at runtime) persists across sessions without any separate storage mechanism.
+
+---
+
+#### Validation and error handling
+
+|Input error|Error message shown|
+|---|---|
+|Missing arguments for `tag-muscle` / `untag-muscle`|`Missing arguments.` + usage hint|
+|Fewer than 2 parts|`Invalid format.` + usage hint|
+|Non-numeric shortcut ID|`Input a valid shortcut ID.`|
+|ID not found in dictionary|`Shortcut does not exist in database.` + `view-database` hint|
+|Invalid muscle group name|`Muscle group does not exist in database.` + `view-muscle-groups` hint|
+|Missing argument for `train`|`Missing muscle group.` + usage hint|
+|Missing argument for `muscle-groups`|`Missing arguments.` + usage hint|
+|Non-numeric ID for `muscle-groups`|`Input a valid shortcut ID.`|
+
+---
+
+#### Design considerations
+
+**Aspect: Storage structure for muscle group metadata**
+
+- **Current choice: fifth pipe-separated field on the shortcut row** — reuses the existing `S | lift | <id> | <name>` row format by appending `| <muscle1>,<muscle2>`. No new row type is needed, and the field is optional, so rows without tags load correctly without any format migration.
+- **Alternative: separate row type (e.g. `M | <id> | <muscle>`)** — one row per tag, making individual tags easy to add or remove in the file. Rejected because it multiplies the number of rows for heavily tagged exercises and complicates the load order, since the shortcut row would need to appear before any of its tag rows.
+
+**Aspect: Shared abstract class for `TagMuscleCommand` and `UntagMuscleCommand`**
+
+- **Current choice: `EditMuscleTagCommand` as an intermediate abstract class** — stores `id`, `muscle`, and `dictionary` once, avoiding constructor duplication. Each subclass only implements `execute(...)`.
+- **Alternative: no intermediate class, duplicate fields in each command** — simpler hierarchy but violates DRY. Any future change to the shared constructor (e.g. adding validation) would need to be made in two places.
+
+**Aspect: Enum vs. string for muscle groups**
+
+- **Current choice: `MuscleGroup` enum** — provides compile-time safety, a fixed set of valid values, and a clean `displayName()` method for UI output. `MuscleGroup.isValid(String)` gives the parser a single source of truth for validation.
+- **Alternative: plain strings stored in a set** — more flexible but allows arbitrary typos to enter the system. Rejected because the set of muscle groups is fixed and well-known, making an enum the more appropriate structure.
+
 ### Notes for team writeups
 
 ### Command Architecture
@@ -982,10 +1218,7 @@ helper method.
 2.  **Command Dispatch:** A `switch` block routes the `commandWord` to the appropriate command constructor 
   (e.g., `DeleteCommand`, `ExitCommand`) or specialized sub-parser methods (e.g., `parseAddRun`, `parseAddLift`).
 
-The following sequence diagram illustrates the internal logic of the `Parser` when handling `add-run` or 
-`delete` commands:
-
-![Parser Sequence Diagram](../out/parser-design/parser-design.png)
+The parser follows the same `parse-then-execute` flow used by the command features described above.
 
 ---
 

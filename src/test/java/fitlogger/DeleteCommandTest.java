@@ -28,12 +28,18 @@ class DeleteCommandTest {
         TestUi ui = new TestUi();
         UserProfile profile = new UserProfile();
 
-        DeleteCommand command = new DeleteCommand("1");
+        DeleteCommand command = new DeleteCommand(1);
         command.execute(storage, workouts, ui, profile);
 
         assertEquals(1, workouts.getSize());
         assertFalse(workouts.getWorkoutAtIndex(0).getDescription().equalsIgnoreCase("Squat"));
         assertEquals("Deleted workout: Squat", ui.lastOutput);
+    }
+
+    @Test
+    void isExit_returnsFalse() {
+        DeleteCommand command = new DeleteCommand(1);
+        assertFalse(command.isExit());
     }
 
     @Test
@@ -46,75 +52,13 @@ class DeleteCommandTest {
         TestUi ui = new TestUi();
         UserProfile profile = new UserProfile();
 
-        DeleteCommand command = new DeleteCommand("3");
+        DeleteCommand command = new DeleteCommand(3);
         command.execute(storage, workouts, ui, profile);
 
         assertEquals(2, workouts.getSize());
         assertFalse(workouts.getWorkoutAtIndex(0).getDescription().equalsIgnoreCase("Deadlift"));
         assertFalse(workouts.getWorkoutAtIndex(1).getDescription().equalsIgnoreCase("Deadlift"));
         assertEquals("Deleted workout: Deadlift", ui.lastOutput);
-    }
-
-    @Test
-    void deleteWorkout_missingWorkoutName_showsUsageMessage() throws FitLoggerException {
-        Storage storage = new Storage();
-        WorkoutList workouts = new WorkoutList();
-        workouts.addWorkout(new RunWorkout("Deadlift", LocalDate.of(2026, 3, 15), 1.0, 1.0));
-        TestUi ui = new TestUi();
-        UserProfile profile = new UserProfile();
-
-        DeleteCommand command = new DeleteCommand(" ");
-        command.execute(storage, workouts, ui, profile);
-
-        assertTrue(workouts.getWorkoutAtIndex(0).getDescription().equals("Deadlift"));
-        assertEquals(
-            "Please specify a workout index to delete. Usage: delete <index>",
-                ui.lastOutput);
-    }
-
-    @Test
-    void deleteWorkout_nonNumericInput_showsPositiveIntegerMessage() throws FitLoggerException {
-        Storage storage = new Storage();
-        WorkoutList workouts = new WorkoutList();
-        workouts.addWorkout(new RunWorkout("Deadlift", LocalDate.of(2026, 3, 15), 1.0, 1.0));
-        TestUi ui = new TestUi();
-        UserProfile profile = new UserProfile();
-
-        DeleteCommand command = new DeleteCommand("Pull Up");
-        command.execute(storage, workouts, ui, profile);
-
-        assertEquals(1, workouts.getSize());
-        assertEquals("Workout index must be a positive integer.", ui.lastOutput);
-    }
-
-    @Test
-    void deleteWorkout_zeroIndex_showsInvalidIndexMessage() throws FitLoggerException {
-        Storage storage = new Storage();
-        WorkoutList workouts = new WorkoutList();
-        workouts.addWorkout(new RunWorkout("Deadlift", LocalDate.of(2026, 3, 15), 1.0, 1.0));
-        TestUi ui = new TestUi();
-        UserProfile profile = new UserProfile();
-
-        DeleteCommand command = new DeleteCommand("0");
-        command.execute(storage, workouts, ui, profile);
-
-        assertEquals(1, workouts.getSize());
-        assertEquals("Invalid workout index: 0", ui.lastOutput);
-    }
-
-    @Test
-    void deleteWorkout_nullInput_showsUsageMessage() throws FitLoggerException {
-        Storage storage = new Storage();
-        WorkoutList workouts = new WorkoutList();
-        workouts.addWorkout(new RunWorkout("Deadlift", LocalDate.of(2026, 3, 15), 1.0, 1.0));
-        TestUi ui = new TestUi();
-        UserProfile profile = new UserProfile();
-
-        DeleteCommand command = new DeleteCommand(null);
-        command.execute(storage, workouts, ui, profile);
-
-        assertEquals(1, workouts.getSize());
-        assertEquals("Please specify a workout index to delete. Usage: delete <index>", ui.lastOutput);
     }
 
     @Test
@@ -125,10 +69,10 @@ class DeleteCommandTest {
         TestUi ui = new TestUi();
         UserProfile profile = new UserProfile();
 
-        DeleteCommand command = new DeleteCommand(" 2 ");
+        DeleteCommand command = new DeleteCommand(2);
         command.execute(storage, workouts, ui, profile);
 
-        assertEquals(1, workouts.getSize());
+        assertTrue(workouts.getWorkoutAtIndex(0).getDescription().equals("Deadlift"));
         assertEquals("Invalid workout index: 2", ui.lastOutput);
     }
 
@@ -140,7 +84,7 @@ class DeleteCommandTest {
         TestUi ui = new TestUi();
         UserProfile profile = new UserProfile();
 
-        DeleteCommand command = new DeleteCommand("1");
+        DeleteCommand command = new DeleteCommand(1);
         command.execute(storage, workouts, ui, profile);
 
         assertTrue(storage.saveCalled);
@@ -149,14 +93,14 @@ class DeleteCommandTest {
     }
 
     @Test
-    void deleteWorkout_invalidInput_doesNotCallSaveData() throws FitLoggerException {
+    void deleteWorkout_outOfRangeIndex_doesNotCallSaveData() throws FitLoggerException {
         FakeStorage storage = new FakeStorage();
         WorkoutList workouts = new WorkoutList();
         workouts.addWorkout(new RunWorkout("Deadlift", LocalDate.of(2026, 3, 15), 1.0, 1.0));
         TestUi ui = new TestUi();
         UserProfile profile = new UserProfile();
 
-        DeleteCommand command = new DeleteCommand("invalid");
+        DeleteCommand command = new DeleteCommand(2);
         command.execute(storage, workouts, ui, profile);
 
         assertFalse(storage.saveCalled);
@@ -171,7 +115,7 @@ class DeleteCommandTest {
         TestUi ui = new TestUi();
         UserProfile profile = new UserProfile();
 
-        DeleteCommand command = new DeleteCommand("1");
+        DeleteCommand command = new DeleteCommand(1);
         command.execute(storage, workouts, ui, profile);
 
         assertTrue(storage.saveCalled);

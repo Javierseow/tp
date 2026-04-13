@@ -1,0 +1,34 @@
+@startuml
+hide circle
+skinparam classAttributeIconSize 0
+
+abstract class Command {
+	+execute(...) : void
+}
+
+class SearchDateCommand {
+	-targetDate : LocalDate
+	+execute(...) : void
+}
+
+class WorkoutList {
+	+getSize() : int
+	+getWorkoutAtIndex(index : int) : Workout
+}
+
+abstract class Workout {
+	+getDate() : LocalDate
+}
+
+class Ui {
+	+showMessage(message : String) : void
+	+showLine() : void
+	+showWorkoutList(...) : void
+}
+
+Command <|-- SearchDateCommand
+SearchDateCommand ..> WorkoutList
+SearchDateCommand ..> Workout
+SearchDateCommand ..> Ui
+WorkoutList --> "*" Workout
+@enduml
