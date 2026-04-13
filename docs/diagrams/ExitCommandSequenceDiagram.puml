@@ -1,0 +1,38 @@
+@startuml
+hide footbox
+
+actor User
+participant ":FitLogger" as Main
+participant ":Parser" as Parser
+participant "command:ExitCommand" as Cmd
+participant ":WorkoutList" as Workouts
+participant ":Storage" as Storage
+participant ":Ui" as Ui
+
+User -> Main : exit
+activate Main
+
+Main -> Parser : parse("exit", workouts, dictionary)
+activate Parser
+Parser --> Main : new ExitCommand()
+deactivate Parser
+
+Main -> Cmd : execute(storage, workouts, ui, profile)
+activate Cmd
+
+Cmd -> Workouts : getWorkouts()
+Cmd -> Storage : saveData(workouts, profile)
+
+alt save succeeds
+	Storage --> Cmd : true
+	Cmd -> Ui : showMessage("Workouts saved.")
+else save fails
+	Storage --> Cmd : false
+	Cmd -> Ui : showError("Failed to save workouts to disk before exit.")
+end
+
+Cmd -> Ui : showGoodbye()
+Cmd --> Main
+deactivate Cmd
+deactivate Main
+@enduml

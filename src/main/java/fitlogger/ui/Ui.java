@@ -4,10 +4,13 @@ import fitlogger.musclegroup.MuscleGroup;
 import fitlogger.workout.StrengthWorkout;
 import fitlogger.workout.Workout;
 import fitlogger.exercisedictionary.ExerciseDictionary;
+import fitlogger.workout.RunWorkout;
 
 import java.util.List;
 import java.util.Scanner;
 import java.util.Set;
+import java.time.YearMonth;
+import java.time.LocalDate;
 
 public class Ui {
     private static final String LINE = "-----------------------------------------------------";
@@ -59,7 +62,7 @@ public class Ui {
                 + "    add-run <name_or_id> d/<distKm> t/<mins>       Log a run\n"
                 + "    add-lift <name_or_id> w/<kg> s/<sets> r/<reps> Log a lift workout\n"
                 + "    edit <index> <field>/<value>                   "
-                + "Edit field: name/description/weight/sets/reps/distance/duration\n"
+                + "Edit field: name/weight/sets/reps/distance/duration\n"
                 + "    view-database                                  View exercise shortcuts and their IDs\n"
                 + "    view-detailed-database                         View exercise shortcuts, IDs, and muscle groups\n"
                 + "    add-shortcut <lift/run> <ID> <name>            Add a custom exercise shortcut\n"
@@ -74,6 +77,7 @@ public class Ui {
                 + "    filter <muscle_group>                          Filter workouts by muscle (e.g., filter chest)\n"
                 + "    delete <index>                                 Delete workout by number\n"
                 + "    search-date <YYYY-MM-DD>                       View workouts completed on a date\n"
+                + "    view-calendar <YYYY-MM>                        View active days in a calendar month\n"
                 + "    exit                                           Save and close FitLogger";
         showMessage(helpMessage);
     }
@@ -156,6 +160,29 @@ public class Ui {
         showLine();
     }
 
+    /**
+     * Displays the personal record entry for a given exercise.
+     * Shows weight/sets/reps for strength workouts, distance/duration for runs.
+     *
+     * @param prWorkout The workout entry representing the personal record.
+     */
+    public void showPr(Workout prWorkout) {
+        showLine();
+        showMessage("Personal Record for: " + prWorkout.getDescription());
+        showMessage("  Date   : " + prWorkout.getDate());
+        if (prWorkout instanceof StrengthWorkout) {
+            StrengthWorkout lift = (StrengthWorkout) prWorkout;
+            showMessage("  Weight : " + lift.getWeight() + "kg");
+            showMessage("  Sets   : " + lift.getSets());
+            showMessage("  Reps   : " + lift.getReps());
+        } else if (prWorkout instanceof RunWorkout) {
+            RunWorkout run = (RunWorkout) prWorkout;
+            showMessage("  Distance : " + run.getDistance() + "km");
+            showMessage("  Duration : " + run.getDurationMinutes() + " mins");
+        }
+        showLine();
+    }
+
     public void showProfile(String name, double height, double weight) {
         showLine();
         showMessageNoNewline("Name: ");
@@ -171,6 +198,37 @@ public class Ui {
         String weightToDisplay =
                 (weight == -1) ? "weight not set yet" : String.format("%.2f", weight) + "kg";
         showMessage(weightToDisplay);
+        showLine();
+    }
+
+    public void showCalendar(YearMonth yearMonth, Set<Integer> activeDays) {
+        showLine();
+        String title = yearMonth.getMonth().name() + " " + yearMonth.getYear();
+        showMessage("      " + title);
+        showMessage(" Su  Mo  Tu  We  Th  Fr  Sa");
+
+        // Get the first day of the month and its day of the week
+        LocalDate firstOfMonth = yearMonth.atDay(1);
+        int dayOfWeekValue = firstOfMonth.getDayOfWeek().getValue() % 7; // Sunday = 0
+
+        // Print leading spaces
+        for (int i = 0; i < dayOfWeekValue; i++) {
+            showMessageNoNewline("    ");
+        }
+
+        int daysInMonth = yearMonth.lengthOfMonth();
+        for (int day = 1; day <= daysInMonth; day++) {
+            // Highlight active days with brackets []
+            String dayStr = activeDays.contains(day) ? String.format("[%2d]", day)
+                    : String.format(" %2d ", day);
+            showMessageNoNewline(dayStr);
+
+            // Break line every Saturday
+            if ((day + dayOfWeekValue) % 7 == 0) {
+                showMessage("");
+            }
+        }
+        showMessage("\n");
         showLine();
     }
 }

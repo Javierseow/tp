@@ -21,6 +21,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -62,6 +63,15 @@ class ParserTest {
     }
 
     @Test
+    void addLift_validShortcutId_addsWorkoutWithDictionaryName() throws FitLoggerException {
+        Command cmd = Parser.parse("add-lift 1 w/100 s/3 r/5", workouts, dictionary);
+        cmd.execute(storage, workouts, ui, profile);
+
+        StrengthWorkout logged = (StrengthWorkout) workouts.getWorkoutAtIndex(0);
+        assertEquals("Squat", logged.getDescription());
+    }
+
+    @Test
     void addLift_zeroWeight_isAllowed() throws FitLoggerException {
         // Bodyweight exercises log w/0
         Command cmd = Parser.parse("add-lift Pull-up w/0 s/3 r/10", workouts, dictionary);
@@ -91,9 +101,38 @@ class ParserTest {
     }
 
     @Test
+    void addLift_missingWeightFlag_throwsException() {
+        FitLoggerException ex = assertThrows(FitLoggerException.class,
+                () -> Parser.parse("add-lift Squat s/3 w/100 r/5", workouts, dictionary));
+        assertTrue(ex.getMessage().contains("Invalid format"));
+    }
+
+    @Test
     void addLift_nonNumericWeight_throwsException() {
         assertThrows(FitLoggerException.class,
                 () -> Parser.parse("add-lift Squat w/heavy s/3 r/5", workouts, dictionary));
+    }
+
+    @Test
+    void addLift_scientificNotationWeight_throwsException() {
+        FitLoggerException ex = assertThrows(FitLoggerException.class,
+                () -> Parser.parse("add-lift Squat w/8e1 s/3 r/5", workouts, dictionary));
+        assertTrue(ex.getMessage().contains("decimal number"));
+    }
+
+    @Test
+    void addLift_overlargeWeight_throwsException() {
+        String overlargeWeight = "2" + "0".repeat(308);
+        assertThrows(FitLoggerException.class,
+                () -> Parser.parse("add-lift Squat w/" + overlargeWeight + " s/3 r/5",
+                        workouts, dictionary));
+    }
+
+    @Test
+    void addLift_unknownShortcutId_throwsException() {
+        FitLoggerException ex = assertThrows(FitLoggerException.class,
+                () -> Parser.parse("add-lift 999 w/100 s/3 r/5", workouts, dictionary));
+        assertTrue(ex.getMessage().contains("Shortcut ID [999] does not exist"));
     }
 
     @Test
@@ -115,6 +154,13 @@ class ParserTest {
         FitLoggerException ex = assertThrows(FitLoggerException.class,
                 () -> Parser.parse("add-lift Squat w/100 s/0 r/5", workouts, dictionary));
         assertTrue(ex.getMessage().toLowerCase().contains("sets"), "Error should mention sets");
+    }
+
+    @Test
+    void addLift_overlargeSets_throwsException() {
+        FitLoggerException ex = assertThrows(FitLoggerException.class,
+                () -> Parser.parse("add-lift Squat w/100 s/1000001 r/5", workouts, dictionary));
+        assertEquals("Sets must not exceed 1000000.", ex.getMessage());
     }
 
     @Test
@@ -163,6 +209,13 @@ class ParserTest {
     }
 
     @Test
+    void addRun_scientificNotationDistance_throwsException() {
+        FitLoggerException ex = assertThrows(FitLoggerException.class,
+                () -> Parser.parse("add-run Morning Jog d/888e3 t/30", workouts, dictionary));
+        assertTrue(ex.getMessage().contains("valid decimal numbers"));
+    }
+
+    @Test
     void addRun_nonNumericDuration_throwsException() {
         assertThrows(FitLoggerException.class,
                 () -> Parser.parse("add-run Morning Jog d/5.0 t/long", workouts, dictionary));
@@ -206,6 +259,37 @@ class ParserTest {
     }
 
     @Test
+    void addRun_validShortcutId_addsWorkoutWithDictionaryName() throws FitLoggerException {
+        Command cmd = Parser.parse("add-run 1 d/5.0 t/25.5", workouts, dictionary);
+        cmd.execute(storage, workouts, ui, profile);
+
+        RunWorkout logged = (RunWorkout) workouts.getWorkoutAtIndex(0);
+        assertEquals("Easy Run", logged.getDescription());
+    }
+
+    @Test
+    void addRun_invalidFlagOrder_throwsException() {
+        FitLoggerException ex = assertThrows(FitLoggerException.class,
+                () -> Parser.parse("add-run Morning Jog t/25 d/5", workouts, dictionary));
+        assertTrue(ex.getMessage().contains("Invalid format"));
+    }
+
+    @Test
+    void addRun_overlargeDistance_throwsException() {
+        String overlargeDistance = "2" + "0".repeat(308);
+        assertThrows(FitLoggerException.class,
+                () -> Parser.parse("add-run Morning Jog d/" + overlargeDistance + " t/30",
+                        workouts, dictionary));
+    }
+
+    @Test
+    void addRun_unknownShortcutId_throwsException() {
+        FitLoggerException ex = assertThrows(FitLoggerException.class,
+                () -> Parser.parse("add-run 999 d/5 t/30", workouts, dictionary));
+        assertTrue(ex.getMessage().contains("Shortcut ID [999] does not exist"));
+    }
+
+    @Test
     void parse_viewDatabase_returnsViewDatabaseCommand() throws FitLoggerException {
         Command cmd = Parser.parse("view-database", workouts, dictionary);
         assertTrue(cmd instanceof ViewDatabaseCommand,
@@ -231,9 +315,67 @@ class ParserTest {
     }
 
     @Test
+    void searchDate_extraArgument_throwsFitLoggerException() {
+        FitLoggerException ex = assertThrows(FitLoggerException.class,
+                () -> Parser.parse("search-date 2026-03-15 2026-03-16", workouts, dictionary));
+        assertEquals("Invalid format for search-date.\nUsage: search-date <YYYY-MM-DD>",
+                ex.getMessage());
+    }
+
+    @Test
     void parse_delete_returnsDeleteCommand() throws FitLoggerException {
         Command cmd = Parser.parse("delete 1", workouts, dictionary);
         assertTrue(cmd instanceof DeleteCommand, "Expected DeleteCommand for delete");
+    }
+
+    @Test
+    void delete_missingIndex_throwsFitLoggerException() {
+        FitLoggerException ex = assertThrows(FitLoggerException.class,
+                () -> Parser.parse("delete", workouts, dictionary));
+        assertTrue(ex.getMessage().contains("Usage: delete <index>"));
+    }
+
+    @Test
+    void delete_nonNumericIndex_throwsFitLoggerException() {
+        FitLoggerException ex = assertThrows(FitLoggerException.class,
+                () -> Parser.parse("delete abc", workouts, dictionary));
+        assertEquals("Workout index must be a positive integer.", ex.getMessage());
+    }
+
+    @Test
+    void delete_extraIndex_throwsFitLoggerException() {
+        FitLoggerException ex = assertThrows(FitLoggerException.class,
+                () -> Parser.parse("delete 1 2", workouts, dictionary));
+        assertEquals("Invalid format for delete.\nUsage: delete <index>", ex.getMessage());
+    }
+
+    @Test
+    void delete_zeroIndex_throwsFitLoggerException() {
+        FitLoggerException ex = assertThrows(FitLoggerException.class,
+                () -> Parser.parse("delete 0", workouts, dictionary));
+        assertEquals("Workout index must be a positive integer.", ex.getMessage());
+    }
+
+    @Test
+    void delete_overlargeIndex_throwsFitLoggerException() {
+        FitLoggerException ex = assertThrows(FitLoggerException.class,
+                () -> Parser.parse("delete 1000001", workouts, dictionary));
+        assertEquals("Workout index must not exceed 1000000.", ex.getMessage());
+    }
+
+    @Test
+    void delete_overflowingIndex_throwsFitLoggerException() {
+        String overflowingIndex = "9".repeat(20);
+        FitLoggerException ex = assertThrows(FitLoggerException.class,
+                () -> Parser.parse("delete " + overflowingIndex, workouts, dictionary));
+        assertEquals("Workout index must not exceed 1000000.", ex.getMessage());
+    }
+
+    @Test
+    void edit_overlargeIndex_throwsFitLoggerException() {
+        FitLoggerException ex = assertThrows(FitLoggerException.class,
+                () -> Parser.parse("edit 1000001 distance/5", workouts, dictionary));
+        assertEquals("Workout index must not exceed 1000000.", ex.getMessage());
     }
 
     @Test
@@ -246,6 +388,13 @@ class ParserTest {
     void parse_exit_returnsExitCommand() throws FitLoggerException {
         Command cmd = Parser.parse("exit", workouts, dictionary);
         assertTrue(cmd instanceof ExitCommand, "Expected ExitCommand for exit");
+    }
+
+    @Test
+    void exit_extraArgument_throwsFitLoggerException() {
+        FitLoggerException ex = assertThrows(FitLoggerException.class,
+                () -> Parser.parse("exit now", workouts, dictionary));
+        assertEquals("Invalid format for exit.\nUsage: exit", ex.getMessage());
     }
 
     // ── add-shortcut tests ────────────────────────────────────────────────
@@ -277,6 +426,13 @@ class ParserTest {
                 () -> Parser.parse("add-shortcut lift 5", workouts, dictionary));
     }
 
+    @Test
+    void addShortcut_zeroId_throwsException() {
+        FitLoggerException ex = assertThrows(FitLoggerException.class,
+                () -> Parser.parse("add-shortcut lift 0 Muscle Up", workouts, dictionary));
+        assertEquals("Shortcut ID must be a positive integer.", ex.getMessage());
+    }
+
     // ── unknown command ───────────────────────────────────────────────────────
 
     @Test
@@ -302,6 +458,11 @@ class ParserTest {
     void validateDelimiters_cleanString_passes() throws FitLoggerException {
         // Should complete without throwing
         Parser.validateNoStorageDelimiters("Bench Press", "Exercise name");
+    }
+
+    @Test
+    void isPlainDecimalNumber_null_returnsFalse() {
+        assertFalse(Parser.isPlainDecimalNumber(null));
     }
 
     private static class TestUi extends Ui {

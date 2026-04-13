@@ -7,22 +7,27 @@ import java.time.LocalDate;
 /**
  * Represents an abstract workout in the FitLogger.command.FitLogger application.
  * This class serves as a base for specific workout types and contains
- * shared logic for storing workout description and date.
+ * shared logic for storing a workout name and date.
  */
 public abstract class Workout {
 
-    /** The description or name of the workout activity. */
+    /**
+     * The stored workout name.
+     *
+     * <p>The field name remains {@code description} to preserve the existing storage and API
+     * terminology used throughout the codebase.
+     */
     protected String description;
 
     /** The date when the workout was performed or is scheduled for. */
     protected LocalDate date;
 
     /**
-     * Initializes a new Workout with a description and date.
+     * Initializes a new Workout with a name and date.
      *
-     * @param description A short summary of the workout.
+     * @param description The workout name shown to users.
      * @param date        The date of the workout.
-     * @throws FitLoggerException if description is null or blank.
+     * @throws FitLoggerException if the name is null or blank.
      */
     public Workout(String description, LocalDate date) throws FitLoggerException {
         setDescription(description);
@@ -38,10 +43,10 @@ public abstract class Workout {
     }
 
     /**
-     * Updates the workout description.
+     * Updates the workout name.
      *
-     * @param description New non-blank description.
-     * @throws FitLoggerException if description is null or blank.
+     * @param description New non-blank workout name.
+     * @throws FitLoggerException if the name is null or blank.
      */
     public void setDescription(String description) throws FitLoggerException {
         if (description == null || description.isBlank()) {
@@ -62,7 +67,7 @@ public abstract class Workout {
     /**
      * Returns a string representation of the workout for display to the user.
      *
-     * @return A formatted string containing description and date.
+     * @return A formatted string containing the workout name and date.
      */
     @Override
     public String toString() {

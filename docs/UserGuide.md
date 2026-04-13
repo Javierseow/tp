@@ -77,6 +77,8 @@ Format: `add-lift <NAME_OR_ID> w/<weightKg> s/<sets> r/<reps>`
 - `s/` — number of sets (positive integer).
 - `r/` — reps per set (positive integer).
 - The flags `w/`, `s/`, `r/` must appear in that order.
+- `weight` must use normal decimal notation such as `80` or `80.5`; scientific notation such as `8e1` is rejected.
+- `sets` and `reps` must be whole numbers from 1 to 1,000,000.
 
 Examples:
 - `add-lift Bench Press w/80 s/3 r/8`
@@ -104,6 +106,7 @@ Format: `add-run <NAME_OR_ID> d/<distanceKm> t/<durationMinutes>`
 - `d/` — distance in kilometres (positive number).
 - `t/` — duration in minutes (positive number, decimals allowed e.g. `25.5`).
 - The flags `d/`, `t/` must appear in that order.
+- Distance and duration must use normal decimal notation such as `5` or `5.0`; scientific notation such as `5e0` is rejected.
 
 Examples:
 
@@ -138,7 +141,7 @@ Sample output:
 `Updated workout 2: [Run] Easy Run (Date: 2026-04-02) (Distance: 3.0km, Duration: 3.0 mins)`
 
 Editable fields:
-- For all workouts: `name`, `description`
+- For all workouts: `name`
 - For run workouts: `distance`, `duration`
 - For lift workouts: `weight`, `sets`, `reps`
 
@@ -146,6 +149,8 @@ Important:
 - Use full field names in `edit` commands.
 - Shorthand flags such as `d/` and `t/` are for `add-run`, not `edit`.
 - For example, use `edit 1 distance/5` instead of `edit 1 d/5`.
+- Decimal fields (`weight`, `distance`, `duration`) must use normal decimal notation, not `NaN`, `Infinity`, or scientific notation.
+- Integer fields (`sets`, `reps`) must be whole numbers from 1 to 1,000,000.
 
 Invalid input example:
 `edit 1 weight/abc`
@@ -160,6 +165,8 @@ Expected error:
 Deletes one workout by index.
 
 Format: `delete <index>`
+
+The command accepts exactly one index. Extra values such as `delete 1 2` are rejected.
 
 Examples:
 - `delete 1`
@@ -205,11 +212,18 @@ Shows workouts completed on the specified date.
 
 Format: `search-date <YYYY-MM-DD>`
 
+The command accepts exactly one date. Extra dates or words after the date are rejected.
+
 Example:
 - `search-date 2026-03-15`
 
 Sample output when matches exist:
-`Workouts on 2026-03-15:`
+```
+Workouts on 2026-03-15:
+-----------------------------------------------------
+1. [Run] Morning Run (Date: 2026-03-15) (Distance: 5.0km, Duration: 30.0 mins)
+-----------------------------------------------------
+```
 
 Sample output when no matches exist:
 `No workouts found.`
@@ -221,7 +235,45 @@ Expected error:
 `Invalid date format for search-date.`
 
 ---
+### View workout calendar: `view-calendar`
 
+Displays an ASCII calendar for a specific month, highlighting the days you successfully logged a workout.
+
+Format: `view-calendar YYYY-MM>`
+
+If no date is provided (e.g., just view-calendar), it defaults to the current month.
+
+Active days (days where you logged at least one workout) are highlighted with square brackets [ ].
+
+This command is perfect for visualizing your training consistency and streaks.
+
+Examples:
+
+`view-calendar` (Shows the current month)
+
+`view-calendar 2026-04` (Shows April 2026)
+
+Sample output:
+
+Plaintext
+-----------------------------------------------------
+      APRIL 2026
+ Su  Mo  Tu  We  Th  Fr  Sa
+              1   2   3   4
+   5   6   7  [8]  9  10  11
+  12  13  14  15  16 [17] 18
+  19  20  21  22  23  24  25
+  26  27  28  29  30
+-----------------------------------------------------
+
+Invalid input example:
+
+`view-calendar 2026/04`
+
+Expected error:
+`Invalid calendar format. Use YYYY-MM (e.g., view-calendar 2026-04)`
+
+---
 ### Filter workouts by muscle group: `filter`
 
 Shows only the workouts from your history that target a specific muscle group.
@@ -322,6 +374,136 @@ Weight: 70.00kg
 - This command ignores all trailing inputs
 
 ---
+
+### View all muscle groups: `view-muscle-groups`
+
+Displays all available muscle groups that can be used for tagging exercises and filtering workouts.
+
+Format: `view-muscle-groups`
+
+- Useful as a reference before using `tag-muscle`, `untag-muscle`, `train`, or `filter`.
+- Ignores all arguments passed after the command.
+
+Expected output:
+
+```
+Here are all available muscle groups: 
+delts, pecs, forearms, upper back, lower back, abs, lats, biceps, triceps, traps, glutes, quads, hamstring, calves
+```
+
+---
+
+### View muscle groups for an exercise: `muscle-groups`
+
+Displays all muscle groups currently tagged to a specific lift shortcut.
+
+Format: `muscle-groups <SHORTCUT_ID>`
+
+- `<SHORTCUT_ID>` — the numeric ID of a lift shortcut from the database. Use `view-database` to see available IDs.
+- Only works for **lift** shortcuts, not run shortcuts.
+
+Examples:
+
+- `muscle-groups 2`
+
+Expected output when tags exist:
+
+```
+Muscle groups for Bench Press: [PECS, TRICEPS, DELTS]
+```
+
+Expected output when no tags exist:
+
+```
+No muscle groups tagged for Bench Press (ID: 2).
+```
+
+Invalid input example: `muscle-groups abc`
+
+Expected error: `Input a valid shortcut ID.`
+
+---
+
+### Tag a muscle group to an exercise: `tag-muscle`
+
+Adds a muscle group tag to a lift shortcut in the database. This lets you use `train` and `filter` to find exercises targeting that muscle.
+
+Format: `tag-muscle <SHORTCUT_ID> <MUSCLE_GROUP>`
+
+- `<SHORTCUT_ID>` — the numeric ID of a lift shortcut. Use `view-database` to see available IDs.
+- `<MUSCLE_GROUP>` — a valid muscle group name. Use `view-muscle-groups` to see available options.
+- Multi-word muscle groups use a space (e.g., `upper back`).
+
+Examples:
+
+- `tag-muscle 1 quads`
+- `tag-muscle 2 upper back`
+
+Expected output:
+
+```
+Added quads to lift 1
+```
+---
+
+### Remove a muscle group tag from an exercise: `untag-muscle`
+
+Removes a muscle group tag from a lift shortcut.
+
+Format: `untag-muscle <SHORTCUT_ID> <MUSCLE_GROUP>`
+
+- `<SHORTCUT_ID>` — the numeric ID of a lift shortcut. Use `view-database` to see available IDs.
+- `<MUSCLE_GROUP>` — a valid muscle group currently tagged to that shortcut.
+
+Examples:
+
+- `untag-muscle 2 delts`
+
+Expected output:
+
+```
+Removed delts from lift ID: 2
+```
+
+---
+
+### Find exercises targeting a muscle: `train`
+
+Lists all lift shortcuts in the database that are tagged with the specified muscle group. Useful for planning your workout session around a target muscle.
+
+Format: `train <MUSCLE_GROUP>`
+
+- `<MUSCLE_GROUP>` — a valid muscle group name. Use `view-muscle-groups` to see all options.
+- Multi-word muscle groups use a space (e.g., `train lower back`).
+- Only **lift** shortcuts are searched.
+
+Examples:
+
+- `train delts`
+- `train lower back`
+
+Expected output when matches exist:
+
+```
+Exercises targeting: delts
+   [2] -> Bench Press
+   [4] -> Overhead Press
+```
+
+Expected output when no matches exist:
+
+```
+Exercises targeting: delts
+No lift exercises currently targeting delts
+Use 'tag-muscle <shortcut-ID> <muscle>' to tag an exercise
+```
+
+Invalid input example: `train`
+
+Expected error: `Missing muscle group.`
+
+---
+
 ### Viewing your last lift: `lastlift`
 
 Displays the most recent recorded stats for a specific strength exercise.
@@ -426,6 +608,8 @@ Saves data and closes FitLogger.
 
 Format: `exit`
 
+The command does not take any arguments. Extra words such as `exit now` are rejected.
+
 --- 
 
 ### Getting help: `help`
@@ -446,9 +630,14 @@ FitLogger includes an upgraded parser designed to catch common data entry mistak
 
 #### Input Validation
 When you enter data, the parser checks for the following:
+- **Integer Limits:** Workout indexes, shortcut IDs, sets, and reps must be positive integers from 1 to 1,000,000.
+- **Decimal Format:** Weight, distance, and duration must use ordinary decimal notation such as `80`, `80.5`, or `5.0`. Scientific notation, `NaN`, and `Infinity` are rejected.
 - **Missing Flags:** If you forget a mandatory flag (like `w/` in `add-lift`), FitLogger will identify the missing component and show you the correct usage.
-- **Type Mismatches:** If you enter text where a number is expected (e.g., `weight/abc`), you will receive a specific error: `Invalid number format`.
+- **Type Mismatches:** If you enter text where a number is expected (e.g., `weight/abc`), you will receive a specific error such as `Invalid weight value: abc`.
 - **Logic Bounds:** The parser prevents "impossible" data. For example, setting a height of `0.1m` or a weight of `1000kg` will trigger a warning to ensure your profile remains accurate.
+
+#### Logging
+FitLogger keeps diagnostic logs in `logs/fitlogger.log` for troubleshooting. These log messages are not printed in the command window during normal use, so user-facing output stays focused on command results and errors.
 
 #### Error Handling Strategy
 If a command fails, FitLogger will not crash. Instead, it will:
@@ -482,6 +671,8 @@ Output:
 | **Edit Workout** | `edit <index> <field>/<value>` | `edit 1 weight/85` |
 | **Delete Workout** | `delete <index>` | `delete 2` |
 | **Search by Date** | `search-date <YYYY-MM-DD>` | `search-date 2026-03-15` |
+| **View Calendar** | `view-calendar <YYYY-MM>` | `view-calendar 2026-04` |
+| **Filter Workout** | `filter <MUSCLE_GROUP>` | `filter delts` |
 | **History** | `history` | `history` |
 | **View Profile** | `profile view` | `profile view` |
 | **Set Profile** | `profile set <field> <value>` | `profile set weight 75` |

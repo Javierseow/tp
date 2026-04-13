@@ -168,7 +168,7 @@ class EditCommandTest {
 
         RunWorkout workout = (RunWorkout) workouts.getWorkoutAtIndex(0);
         assertEquals(5.0, workout.getDistance(), 0.001);
-        assertEquals("Distance must be a positive number.", ui.lastOutput);
+        assertEquals("Invalid distance value: NaN", ui.lastOutput);
     }
 
     @Test
@@ -179,6 +179,84 @@ class EditCommandTest {
         UserProfile profile = new UserProfile();
 
         EditCommand command = new EditCommand(1, "distance", "Infinity");
+        command.execute(STORAGE, workouts, ui, profile);
+
+        RunWorkout workout = (RunWorkout) workouts.getWorkoutAtIndex(0);
+        assertEquals(5.0, workout.getDistance(), 0.001);
+        assertEquals("Invalid distance value: Infinity", ui.lastOutput);
+    }
+
+    @Test
+    void editDistance_scientificNotation_rejectedAndUnchanged() throws FitLoggerException {
+        WorkoutList workouts = new WorkoutList();
+        workouts.addWorkout(new RunWorkout("Morning Jog", LocalDate.of(2026, 3, 13), 5.0, 30.0));
+        TestUi ui = new TestUi();
+        UserProfile profile = new UserProfile();
+
+        EditCommand command = new EditCommand(1, "distance", "888e3");
+        command.execute(STORAGE, workouts, ui, profile);
+
+        RunWorkout workout = (RunWorkout) workouts.getWorkoutAtIndex(0);
+        assertEquals(5.0, workout.getDistance(), 0.001);
+        assertEquals("Invalid distance value: 888e3", ui.lastOutput);
+    }
+
+    @Test
+    void editDistance_overlargeValue_rejectedAndUnchanged() throws FitLoggerException {
+        WorkoutList workouts = new WorkoutList();
+        workouts.addWorkout(new RunWorkout("Morning Jog", LocalDate.of(2026, 3, 13), 5.0, 30.0));
+        TestUi ui = new TestUi();
+        UserProfile profile = new UserProfile();
+        String overlargeDistance = "9".repeat(400);
+
+        EditCommand command = new EditCommand(1, "distance", overlargeDistance);
+        command.execute(STORAGE, workouts, ui, profile);
+
+        RunWorkout workout = (RunWorkout) workouts.getWorkoutAtIndex(0);
+        assertEquals(5.0, workout.getDistance(), 0.001);
+        assertEquals("Invalid distance value: " + overlargeDistance, ui.lastOutput);
+    }
+
+    @Test
+    void editWeight_overlargeValue_rejectedAndUnchanged() throws FitLoggerException {
+        WorkoutList workouts = new WorkoutList();
+        workouts.addWorkout(new StrengthWorkout("Bench Press", 80.0, 3, 8, LocalDate.of(2026, 3, 13)));
+        TestUi ui = new TestUi();
+        UserProfile profile = new UserProfile();
+        String overlargeWeight = "9".repeat(400);
+
+        EditCommand command = new EditCommand(1, "weight", overlargeWeight);
+        command.execute(STORAGE, workouts, ui, profile);
+
+        StrengthWorkout workout = (StrengthWorkout) workouts.getWorkoutAtIndex(0);
+        assertEquals(80.0, workout.getWeight(), 0.001);
+        assertEquals("Invalid weight value: " + overlargeWeight, ui.lastOutput);
+    }
+
+    @Test
+    void editDuration_overlargeValue_rejectedAndUnchanged() throws FitLoggerException {
+        WorkoutList workouts = new WorkoutList();
+        workouts.addWorkout(new RunWorkout("Morning Jog", LocalDate.of(2026, 3, 13), 5.0, 30.0));
+        TestUi ui = new TestUi();
+        UserProfile profile = new UserProfile();
+        String overlargeDuration = "9".repeat(400);
+
+        EditCommand command = new EditCommand(1, "duration", overlargeDuration);
+        command.execute(STORAGE, workouts, ui, profile);
+
+        RunWorkout workout = (RunWorkout) workouts.getWorkoutAtIndex(0);
+        assertEquals(30.0, workout.getDurationMinutes(), 0.001);
+        assertEquals("Invalid duration value: " + overlargeDuration, ui.lastOutput);
+    }
+
+    @Test
+    void editDistance_zero_rejectedAndUnchanged() throws FitLoggerException {
+        WorkoutList workouts = new WorkoutList();
+        workouts.addWorkout(new RunWorkout("Morning Jog", LocalDate.of(2026, 3, 13), 5.0, 30.0));
+        TestUi ui = new TestUi();
+        UserProfile profile = new UserProfile();
+
+        EditCommand command = new EditCommand(1, "distance", "0");
         command.execute(STORAGE, workouts, ui, profile);
 
         RunWorkout workout = (RunWorkout) workouts.getWorkoutAtIndex(0);
@@ -397,6 +475,37 @@ class EditCommandTest {
         StrengthWorkout workout = (StrengthWorkout) workouts.getWorkoutAtIndex(0);
         assertEquals(3, workout.getSets());
         assertEquals("Sets must be a positive integer.", ui.lastOutput);
+    }
+
+    @Test
+    void editSets_overlargeValue_rejectedAndUnchanged() throws FitLoggerException {
+        WorkoutList workouts = new WorkoutList();
+        workouts.addWorkout(new StrengthWorkout("Bench Press", 80.0, 3, 8, LocalDate.of(2026, 3, 13)));
+        TestUi ui = new TestUi();
+        UserProfile profile = new UserProfile();
+
+        EditCommand command = new EditCommand(1, "sets", "1000001");
+        command.execute(STORAGE, workouts, ui, profile);
+
+        StrengthWorkout workout = (StrengthWorkout) workouts.getWorkoutAtIndex(0);
+        assertEquals(3, workout.getSets());
+        assertEquals("Sets must not exceed 1000000.", ui.lastOutput);
+    }
+
+    @Test
+    void editSets_integerOverflow_rejectedAndUnchanged() throws FitLoggerException {
+        WorkoutList workouts = new WorkoutList();
+        workouts.addWorkout(new StrengthWorkout("Bench Press", 80.0, 3, 8, LocalDate.of(2026, 3, 13)));
+        TestUi ui = new TestUi();
+        UserProfile profile = new UserProfile();
+        String overflowingSets = "9".repeat(20);
+
+        EditCommand command = new EditCommand(1, "sets", overflowingSets);
+        command.execute(STORAGE, workouts, ui, profile);
+
+        StrengthWorkout workout = (StrengthWorkout) workouts.getWorkoutAtIndex(0);
+        assertEquals(3, workout.getSets());
+        assertEquals("Sets must not exceed 1000000.", ui.lastOutput);
     }
 
     @Test
