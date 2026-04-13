@@ -503,7 +503,7 @@ public class Parser {
     private static Command parseProfile(String arguments) throws FitLoggerException {
         if (arguments.isBlank()) {
             throw new FitLoggerException("Missing arguments for viewing/setting up profile.\n"
-                    + "Usage: profile view OR profile set <field> <value>");
+                    + "Usage: profile view/clear OR profile set <field> <value>");
         }
         String[] info = splitInput(arguments, " ", 3);
         assert info.length > 0 : "Profile arguments are missing";
@@ -537,11 +537,11 @@ public class Parser {
                     return new UpdateProfileCommand(null, -1, updatedHeightOrWeight);
                 default:
                     throw new FitLoggerException("Invalid profile action. \n"
-                            + "Usage: profile view OR profile set <field> <value>");
+                            + "Usage: profile view/clear OR profile set <field> <value>");
                 }
             default:
                 throw new FitLoggerException("Invalid profile action. \n"
-                        + "Usage: profile view OR profile set <field> <value>");
+                        + "Usage: profile view/clear OR profile set <field> <value>");
             }
         } catch (IndexOutOfBoundsException e) {
             throw new FitLoggerException(
@@ -558,7 +558,7 @@ public class Parser {
             }
             if (newValue < lowerBound || newValue > upperBound) {
                 throw new FitLoggerException("Your Height/Weight is unrealistically low/high.\n"
-                        + "Please ensure your values are correct, height in m and weight in Kg");
+                        + "Please ensure your values are correct, height in m and weight in kg");
             }
             return newValue;
         } catch (NumberFormatException e) {
@@ -662,8 +662,8 @@ public class Parser {
 
         try {
             int days = Integer.parseInt(arguments.trim());
-            if (days <= 0) {
-                throw new FitLoggerException("Number of days must be a positive integer.");
+            if (days < 0) {
+                throw new FitLoggerException("Number of days must be a non-negative integer.");
             }
             if (days >= Parser.MAX_INTEGER_INPUT) {
                 throw new NumberFormatException();
@@ -671,7 +671,7 @@ public class Parser {
             return new ViewShoeMileageCommand(days);
         } catch (NumberFormatException e) {
             throw new FitLoggerException("Invalid format. Usage: view-total-mileage [DAYS]\n"
-                    + "DAYS should be a positive integer and below " + Parser.MAX_INTEGER_INPUT + ".");
+                    + "DAYS should be a non-negative integer and below " + Parser.MAX_INTEGER_INPUT + ".");
         }
     }
 }

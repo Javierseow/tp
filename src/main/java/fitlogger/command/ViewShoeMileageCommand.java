@@ -8,6 +8,10 @@ import fitlogger.workoutlist.WorkoutList;
 
 import java.time.LocalDate;
 
+/**
+ * Command to calculate and display total running mileage.
+ * Can filter by a specific number of recent days.
+ */
 public class ViewShoeMileageCommand extends Command {
     private final int daysLimit;
 
@@ -16,7 +20,7 @@ public class ViewShoeMileageCommand extends Command {
     }
 
     public ViewShoeMileageCommand(int daysLimit) {
-        assert daysLimit > 0 : "Days limit must be positive";
+        assert daysLimit >= 0 : "Days limit must be non-negative";
         this.daysLimit = daysLimit;
     }
 
@@ -24,12 +28,14 @@ public class ViewShoeMileageCommand extends Command {
     public void execute(Storage storage, WorkoutList workouts, Ui ui, UserProfile profile) {
         double totalMileage = 0;
         int numberOfRuns = 0;
+
         LocalDate cutoffDate = LocalDate.now().minusDays(daysLimit);
 
         for (int i = 0; i < workouts.getSize(); i++) {
             if (workouts.getWorkoutAtIndex(i) instanceof RunWorkout) {
                 RunWorkout run = (RunWorkout) workouts.getWorkoutAtIndex(i);
 
+                // !isBefore(cutoffDate) includes the cutoff date itself
                 if (daysLimit == -1 || !run.getDate().isBefore(cutoffDate)) {
                     totalMileage += run.getDistance();
                     numberOfRuns++;
@@ -39,6 +45,9 @@ public class ViewShoeMileageCommand extends Command {
 
         if (daysLimit == -1) {
             ui.showMessage("Total shoe mileage (all time): " + String.format("%.2f", totalMileage) + "km"
+                    + " across " + numberOfRuns + " run(s).");
+        } else if (daysLimit == 0) {
+            ui.showMessage("Total shoe mileage (today): " + String.format("%.2f", totalMileage) + "km"
                     + " across " + numberOfRuns + " run(s).");
         } else {
             ui.showMessage("Total shoe mileage (past " + daysLimit + " day(s)): "

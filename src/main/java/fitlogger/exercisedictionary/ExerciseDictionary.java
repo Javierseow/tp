@@ -71,7 +71,6 @@ public class ExerciseDictionary {
             liftMuscleGroups.remove(id);
         }
         liftDictionary.put(id, name);
-        liftMuscleGroups.remove(id);
     }
 
     public void addRunShortcut(int id, String name) {

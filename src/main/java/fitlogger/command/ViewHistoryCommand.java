@@ -5,6 +5,10 @@ import fitlogger.storage.Storage;
 import fitlogger.ui.Ui;
 import fitlogger.workoutlist.WorkoutList;
 
+/**
+ * Command to display the workout history.
+ * Supports showing all entries or a limited number of the most recent entries.
+ */
 public class ViewHistoryCommand extends Command {
     private final int numberOfEntriesToShow;
 
