@@ -49,6 +49,7 @@ Format: `add-shortcut <lift/run> <ID> <EXERCISE_NAME>`
 - `<lift/run>` — must be exactly `lift` or `run`.
 - `<ID>` — a positive integer. If the ID already exists, it overwrites the existing shortcut.
 - `<EXERCISE_NAME>` — must not contain `|` or `/`.
+- **Note:** If you overwrite an existing lift shortcut ID, any muscle groups previously tagged to that ID will be automatically reset.
 
 Examples:
 - `add-shortcut lift 5 Romanian Deadlift`
@@ -63,7 +64,27 @@ You can then log using the ID directly instead of the full name:
 ```
 add-lift 5 w/60 s/3 r/10
 ```
- 
+
+--- 
+
+### Deleting a custom shortcut: `delete-shortcut`
+
+Removes a custom exercise shortcut from the database.
+
+Format: `delete-shortcut <lift/run> <ID>`
+
+- `<lift/run>` — must be exactly `lift` or `run`.
+- `<ID>` — the numeric ID of the shortcut you want to delete.
+- **Note:** Deleting a lift shortcut will also automatically remove any muscle group tags associated with it.
+
+Examples:
+- `delete-shortcut lift 5`
+- `delete-shortcut run 4`
+
+Expected output:
+
+`Success! Removed strength shortcut: [L5] -> Romanian Deadlift`
+
 ---
 
 ### Logging a strength workout: `add-lift`
@@ -79,6 +100,7 @@ Format: `add-lift <NAME_OR_ID> w/<weightKg> s/<sets> r/<reps>`
 - The flags `w/`, `s/`, `r/` must appear in that order.
 - `weight` must use normal decimal notation such as `80` or `80.5`; scientific notation such as `8e1` is rejected.
 - `sets` and `reps` must be whole numbers from 1 to 1,000,000.
+- **Warning:** The exercise name cannot contain the pipe `|` or forward slash `/` characters, as these are reserved for saving your data.
 
 Examples:
 - `add-lift Bench Press w/80 s/3 r/8`
@@ -670,6 +692,7 @@ Output:
 | **Add Run** | `add-run <NAME_OR_ID> d/<dist> t/<mins>` | `add-run Tempo Run d/5.0 t/25` |
 | **View Database** | `view-database` | `view-database` |
 | **Add Shortcut** | `add-shortcut <lift/run> <ID> <name>` | `add-shortcut lift 5 Muscle Up` |
+| **Delete Shortcut**| `delete-shortcut <lift/run> <ID>` | `delete-shortcut lift 5` |
 | **Edit Workout** | `edit <index> <field>/<value>` | `edit 1 weight/85` |
 | **Delete Workout** | `delete <index>` | `delete 2` |
 | **Search by Date** | `search-date <YYYY-MM-DD>` | `search-date 2026-03-15` |

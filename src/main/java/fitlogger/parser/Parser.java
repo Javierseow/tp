@@ -23,6 +23,7 @@ import fitlogger.command.ViewMuscleGroupCommand;
 import fitlogger.command.ViewProfileCommand;
 import fitlogger.command.ViewShoeMileageCommand;
 import fitlogger.command.AddShortcutCommand;
+import fitlogger.command.DeleteShortcutCommand;
 import fitlogger.command.ViewPrCommand;
 import fitlogger.exception.FitLoggerException;
 import fitlogger.musclegroup.MuscleGroup;
@@ -101,6 +102,9 @@ public class Parser {
         case "add-shortcut":
             return parseAddShortcut(arguments, dictionary);
 
+        case "delete-shortcut":
+            return parseDeleteShortcut(arguments, dictionary);
+
         case "lastlift":
             return new ViewLastLiftCommand(arguments);
 
@@ -173,6 +177,9 @@ public class Parser {
             String durationText = runInfo[2].trim();
             if (!isPlainDecimalNumber(distanceText) || !isPlainDecimalNumber(durationText)) {
                 throw new NumberFormatException();
+            }
+            if (durationText.matches(".*\\s+.*")) {
+                throw new FitLoggerException("Invalid format. No additional text allowed after duration.");
             }
             distance = Double.parseDouble(distanceText);
             durationMinutes = Double.parseDouble(durationText);
@@ -256,7 +263,12 @@ public class Parser {
                 throw new NumberFormatException();
             }
             sets = parsePositiveIntegerWithinLimit(info[2].trim(), "Sets");
-            reps = parsePositiveIntegerWithinLimit(info[3].trim(), "Reps");
+            String repsText = info[3].trim();
+            if (repsText.matches(".*\\s+.*")) {
+                throw new FitLoggerException("Invalid format. No additional text allowed after reps.");
+            }
+            reps = parsePositiveIntegerWithinLimit(repsText, "Reps");
+
         } catch (NumberFormatException e) {
             throw new FitLoggerException(
                     "Weight must be a decimal number; sets and reps must be integers.\n"
@@ -296,6 +308,23 @@ public class Parser {
         validateNoStorageDelimiters(name, "Shortcut name");
 
         return new AddShortcutCommand(type, id, name, dictionary);
+    }
+
+    private static Command parseDeleteShortcut(String arguments, ExerciseDictionary dictionary)
+            throws FitLoggerException {
+        if (arguments.isBlank()) {
+            throw new FitLoggerException("Missing arguments.\nUsage: delete-shortcut <lift/run> <ID>");
+        }
+        String[] parts = splitInput(arguments, " ", 2);
+        if (parts.length < 2) {
+            throw new FitLoggerException("Invalid format.\nUsage: delete-shortcut <lift/run> <ID>");
+        }
+        String type = parts[0].toLowerCase();
+        if (!type.equals("lift") && !type.equals("run")) {
+            throw new FitLoggerException("Shortcut type must be 'lift' or 'run'.");
+        }
+        int id = parsePositiveIntegerWithinLimit(parts[1].trim(), "Shortcut ID");
+        return new DeleteShortcutCommand(type, id, dictionary);
     }
 
     /**
@@ -523,6 +552,9 @@ public class Parser {
     private static double updateHeightOrWeight(String value, double lowerBound, double upperBound)
             throws FitLoggerException {
         try {
+            if (!isPlainDecimalNumber(value)) {
+                throw new FitLoggerException("Please provide a standard decimal number (no scientific notation).");
+            }
             double newValue = Double.parseDouble(value);
             if (!Double.isFinite(newValue)) {
                 throw new FitLoggerException("Invalid input. Please provide a real number.");

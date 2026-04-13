@@ -1,5 +1,4 @@
 @startuml
-hide circle
 abstract class Command {
     +execute(storage, workouts, ui, profile)
     +isExit() : boolean
@@ -7,7 +6,6 @@ abstract class Command {
 
 class ViewLastLiftCommand {
     -exerciseId : String
-    +ViewLastLiftCommand(exerciseId)
     +execute(storage, workouts, ui, profile)
 }
 
@@ -17,9 +15,6 @@ class WorkoutList {
 }
 
 class StrengthWorkout {
-    -weight : double
-    -sets : int
-    -reps : int
     +getWeight() : double
     +getSets() : int
     +getReps() : int

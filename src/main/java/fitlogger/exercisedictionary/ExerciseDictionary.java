@@ -71,11 +71,21 @@ public class ExerciseDictionary {
             liftMuscleGroups.remove(id);
         }
         liftDictionary.put(id, name);
+        liftMuscleGroups.remove(id);
     }
 
     public void addRunShortcut(int id, String name) {
         assert id > 0 && name != null && !name.trim().isEmpty();
         runDictionary.put(id, name);
+    }
+
+    public void removeLiftShortcut(int id) {
+        liftDictionary.remove(id);
+        liftMuscleGroups.remove(id);
+    }
+
+    public void removeRunShortcut(int id) {
+        runDictionary.remove(id);
     }
 
     public Map<Integer, String> getLiftShortcuts() {

@@ -15,6 +15,13 @@ class AddShortcutCommand {
     + execute(Storage, WorkoutList, Ui, UserProfile): void
 }
 
+class DeleteShortcutCommand {
+    - type: String
+    - id: int
+    - dictionary: ExerciseDictionary
+    + execute(Storage, WorkoutList, Ui, UserProfile): void
+}
+
 class ViewDatabaseCommand {
     - dictionary: ExerciseDictionary
     + execute(Storage, WorkoutList, Ui, UserProfile): void
@@ -33,11 +40,15 @@ class ExerciseDictionary {
     + getRunName(int): String
     + addLiftShortcut(int, String): void
     + addRunShortcut(int, String): void
+    + removeLiftShortcut(int): void
+    + removeRunShortcut(int): void
 }
 
 Command <|-- AddShortcutCommand
+Command <|-- DeleteShortcutCommand
 Command <|-- ViewDatabaseCommand
 AddShortcutCommand --> ExerciseDictionary : mutates
+DeleteShortcutCommand --> ExerciseDictionary : mutates
 ViewDatabaseCommand --> ExerciseDictionary : reads
 Storage --> ExerciseDictionary : persists
 @enduml

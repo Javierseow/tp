@@ -8,22 +8,14 @@ participant ":Ui" as UI
 
 User -> FL : pr Bench Press
 FL -> P : parse(...)
-P --> FL : ViewPrCommand("Bench Press")
+P --> FL : :ViewPrCommand
 FL -> CMD : execute(storage, workouts, ui, profile)
-CMD -> WL : getSize()
-loop i from 0 to size-1
-    CMD -> WL : getWorkoutAtIndex(i)
-    WL --> CMD : workout
-    alt name matches and is StrengthWorkout
-        CMD -> CMD : track if weight > currentMax
-    else name matches and is RunWorkout
-        CMD -> CMD : track if distance > currentMax
-    end
-end
+CMD -> WL : scan all entries for matching exercise
+WL --> CMD : entry with highest weight or longest distance (or null)
 alt PR found
     CMD -> UI : showPr(prWorkout)
     UI --> User : displays PR stats
-else no match found
+else no match
     CMD -> UI : showMessage("No record found...")
 end
 @enduml

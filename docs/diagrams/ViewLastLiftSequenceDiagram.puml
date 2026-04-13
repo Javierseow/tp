@@ -8,19 +8,14 @@ participant ":Ui" as UI
 
 User -> FL : lastlift Bench Press
 FL -> P : parse(...)
-P --> FL : ViewLastLiftCommand("Bench Press")
+P --> FL : :ViewLastLiftCommand
 FL -> CMD : execute(storage, workouts, ui, profile)
-CMD -> WL : getSize()
-loop i from last to 0
-    CMD -> WL : getWorkoutAtIndex(i)
-    WL --> CMD : workout
-    alt workout is StrengthWorkout and name matches
-        CMD -> UI : showLastLift(lift)
-        UI --> User : displays stats
-        CMD --> FL : return
-    end
-end
-alt no match found
+CMD -> WL : search in reverse for matching StrengthWorkout
+WL --> CMD : most recent match (or null)
+alt match found
+    CMD -> UI : showLastLift(lift)
+    UI --> User : displays stats
+else no match
     CMD -> UI : showMessage("No record found...")
 end
 @enduml

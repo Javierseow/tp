@@ -2,29 +2,17 @@
 participant ":FitLogger" as FL
 participant ":Storage" as ST
 participant ":Scanner" as SC
-participant ":WorkoutList" as WL
 
 FL -> ST : loadData(profile)
-ST -> ST : check file exists
+ST -> ST : check if file exists
 alt file does not exist
     ST --> FL : empty list
 else file exists
     ST -> SC : new Scanner(file)
-    loop for each line
-        SC --> ST : line
-        alt line is profile (line 1)
-            ST -> ST : parseProfile(line, profile)
-        else line starts with R
-            ST -> ST : parseRunWorkout(fields)
-            ST --> WL : RunWorkout
-        else line starts with L
-            ST -> ST : parseStrengthWorkout(fields)
-            ST --> WL : StrengthWorkout
-        else corrupted line
-            ST -> ST : print warning, skip
-        end
+    ST -> ST : parseProfile(line 1, profile)
+    loop for each remaining line
+        ST -> SC : nextLine()
+        ST --> FL : Workout object (R or L)
     end
-    ST --> FL : List<Workout>
 end
-FL -> WL : addWorkout(each)
 @enduml
