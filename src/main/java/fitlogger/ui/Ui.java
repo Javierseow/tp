@@ -69,7 +69,10 @@ public class Ui {
                 + "    add-shortcut <lift/run> <ID> <name>            Add a custom exercise shortcut\n"
                 + "    delete-shortcut <lift/run> <ID>                Delete a custom exercise shortcut\n"
                 + "    view-total-mileage                             View total distance ran across all run workouts\n"
-                + "    lastlift <EXERCISE_NAME>                       View most recent lift for an exercise\n"
+                + "    pr <EXERCISE_NAME_OR_ID>                       View personal record for an exercise\n"
+                + "    lastlift <EXERCISE_NAME_OR_ID>                 View most recent lift for an exercise\n"
+                + "    lastcardio <EXERCISE_NAME_OR_ID>               View most recent cardio for an exercise\n"
+                + "    lastrun <EXERCISE_NAME_OR_ID>                  Same as lastcardio\n"
                 + "    view-muscle-groups                             View all available muscle groups\n"
                 + "    muscle-groups <lift_shortcut_ID>               View all muscle groups for a specific exercise\n"
                 + "    tag-muscle <lift_shortcut_ID> <muscle>         Tag muscle groups to a shortcut\n"
@@ -174,6 +177,15 @@ public class Ui {
         showMessage("  Weight : " + lift.getWeight() + "kg");
         showMessage("  Sets   : " + lift.getSets());
         showMessage("  Reps   : " + lift.getReps());
+        showLine();
+    }
+
+    public void showLastCardio(RunWorkout run) {
+        showLine();
+        showMessage("Last recorded cardio for: " + run.getDescription());
+        showMessage("  Date     : " + run.getDate());
+        showMessage("  Distance : " + run.getDistance() + "km");
+        showMessage("  Duration : " + run.getDurationMinutes() + " mins");
         showLine();
     }
 
