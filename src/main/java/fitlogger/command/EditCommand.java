@@ -163,7 +163,14 @@ public class EditCommand extends Command {
      */
     private boolean editWeight(StrengthWorkout workout, Ui ui) {
         try {
-            double value = Double.parseDouble(newValue.trim());
+            String valueText = newValue.trim();
+            if (!Parser.isPlainDecimalNumber(valueText)) {
+                throw new NumberFormatException();
+            }
+            double value = Double.parseDouble(valueText);
+            if (!Double.isFinite(value)) {
+                throw new NumberFormatException();
+            }
             workout.setWeight(value);
             return true;
         } catch (NumberFormatException exception) {
@@ -185,7 +192,7 @@ public class EditCommand extends Command {
      */
     private boolean editSets(StrengthWorkout workout, Ui ui) {
         try {
-            int value = Integer.parseInt(newValue.trim());
+            int value = parseIntegerFieldWithinLimit("Sets");
             workout.setSets(value);
             return true;
         } catch (NumberFormatException exception) {
@@ -207,7 +214,7 @@ public class EditCommand extends Command {
      */
     private boolean editReps(StrengthWorkout workout, Ui ui) {
         try {
-            int value = Integer.parseInt(newValue.trim());
+            int value = parseIntegerFieldWithinLimit("Reps");
             workout.setReps(value);
             return true;
         } catch (NumberFormatException exception) {
@@ -229,7 +236,14 @@ public class EditCommand extends Command {
      */
     private boolean editDistance(RunWorkout workout, Ui ui) {
         try {
-            double value = Double.parseDouble(newValue.trim());
+            String valueText = newValue.trim();
+            if (!Parser.isPlainDecimalNumber(valueText)) {
+                throw new NumberFormatException();
+            }
+            double value = Double.parseDouble(valueText);
+            if (!Double.isFinite(value)) {
+                throw new NumberFormatException();
+            }
             workout.setDistance(value);
             return true;
         } catch (NumberFormatException exception) {
@@ -251,7 +265,14 @@ public class EditCommand extends Command {
      */
     private boolean editDuration(RunWorkout workout, Ui ui) {
         try {
-            double value = Double.parseDouble(newValue.trim());
+            String valueText = newValue.trim();
+            if (!Parser.isPlainDecimalNumber(valueText)) {
+                throw new NumberFormatException();
+            }
+            double value = Double.parseDouble(valueText);
+            if (!Double.isFinite(value)) {
+                throw new NumberFormatException();
+            }
             workout.setDurationMinutes(value);
             return true;
         } catch (NumberFormatException exception) {
@@ -262,5 +283,25 @@ public class EditCommand extends Command {
             ui.showMessage(exception.getMessage());
         }
         return false;
+    }
+
+    /**
+     * Parses an integer edit value and rejects values above the application limit.
+     */
+    private int parseIntegerFieldWithinLimit(String fieldName) throws FitLoggerException {
+        try {
+            int value = Integer.parseInt(newValue.trim());
+            if (value > Parser.MAX_INTEGER_INPUT) {
+                throw new FitLoggerException(fieldName + " must not exceed "
+                        + Parser.MAX_INTEGER_INPUT + ".");
+            }
+            return value;
+        } catch (NumberFormatException exception) {
+            if (newValue.trim().matches("\\d+")) {
+                throw new FitLoggerException(fieldName + " must not exceed "
+                        + Parser.MAX_INTEGER_INPUT + ".");
+            }
+            throw exception;
+        }
     }
 }

@@ -1,36 +1,43 @@
 @startuml
+hide circle
 skinparam classAttributeIconSize 0
 
 abstract class Command {
-	+execute(storage, workouts, ui, profile)
+	+execute(...) : void
 }
 
 class DeleteCommand {
 	-oneBasedIndex : int
-	+execute(storage, workouts, ui, profile)
+	+execute(...) : void
 }
 
 class WorkoutList {
-	+getSize()
-	+getWorkoutAtIndex(index)
-	+deleteWorkout(index)
-	+getWorkouts()
+	+getSize() : int
+	+getWorkoutAtIndex(index : int) : Workout
+	+deleteWorkout(index : int) : void
+	+getWorkouts() : List<Workout>
+}
+
+abstract class Workout {
+	+getDescription() : String
 }
 
 class Storage {
-	+saveData(workouts, profile) : boolean
+	+saveData(...) : boolean
 }
 
 class Ui {
-	+showMessage(message)
-	+showError(message)
+	+showMessage(message : String) : void
+	+showError(message : String) : void
 }
 
 class UserProfile
 
 Command <|-- DeleteCommand
 DeleteCommand ..> WorkoutList
+DeleteCommand ..> Workout
 DeleteCommand ..> Storage
 DeleteCommand ..> Ui
 DeleteCommand ..> UserProfile
+WorkoutList --> "*" Workout
 @enduml

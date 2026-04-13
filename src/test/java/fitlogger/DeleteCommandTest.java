@@ -37,6 +37,12 @@ class DeleteCommandTest {
     }
 
     @Test
+    void isExit_returnsFalse() {
+        DeleteCommand command = new DeleteCommand(1);
+        assertFalse(command.isExit());
+    }
+
+    @Test
     void deleteWorkout_byIndex_deletesWorkoutAtOneBasedPosition() throws FitLoggerException {
         Storage storage = new Storage();
         WorkoutList workouts = new WorkoutList();

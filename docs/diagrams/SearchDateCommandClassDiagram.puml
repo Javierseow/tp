@@ -1,32 +1,34 @@
 @startuml
+hide circle
 skinparam classAttributeIconSize 0
 
 abstract class Command {
-	+execute(storage, workouts, ui, profile)
+	+execute(...) : void
 }
 
 class SearchDateCommand {
 	-targetDate : LocalDate
-	+execute(storage, workouts, ui, profile)
+	+execute(...) : void
 }
 
 class WorkoutList {
-	+getSize()
-	+getWorkoutAtIndex(index)
+	+getSize() : int
+	+getWorkoutAtIndex(index : int) : Workout
 }
 
-class Workout {
+abstract class Workout {
 	+getDate() : LocalDate
 }
 
 class Ui {
-	+showMessage(message)
-	+showLine()
-	+showWorkoutList(workouts)
+	+showMessage(message : String) : void
+	+showLine() : void
+	+showWorkoutList(...) : void
 }
 
 Command <|-- SearchDateCommand
 SearchDateCommand ..> WorkoutList
 SearchDateCommand ..> Workout
 SearchDateCommand ..> Ui
+WorkoutList --> "*" Workout
 @enduml

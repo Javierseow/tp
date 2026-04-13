@@ -1,49 +1,50 @@
 @startuml
+hide circle
 skinparam classAttributeIconSize 0
 
 abstract class Command {
-	+execute(storage, workouts, ui, profile)
+	+execute(...) : void
 }
 
 class EditCommand {
 	-oneBasedIndex : int
 	-fieldName : String
 	-newValue : String
-	+execute(storage, workouts, ui, profile)
+	+execute(...) : void
 }
 
 class WorkoutList {
-	+getSize()
-	+getWorkoutAtIndex(index)
-	+getWorkouts()
+	+getSize() : int
+	+getWorkoutAtIndex(index : int) : Workout
+	+getWorkouts() : List<Workout>
 }
 
-class Workout {
-	+setDescription(value)
+abstract class Workout {
+	+setDescription(description : String) : void
 }
 
 class StrengthWorkout {
-	+setWeight(value)
-	+setSets(value)
-	+setReps(value)
+	+setWeight(weight : double) : void
+	+setSets(sets : int) : void
+	+setReps(reps : int) : void
 }
 
 class RunWorkout {
-	+setDistance(value)
-	+setDurationMinutes(value)
+	+setDistance(distance : double) : void
+	+setDurationMinutes(durationMinutes : double) : void
 }
 
 class Storage {
-	+saveData(workouts, profile) : boolean
+	+saveData(...) : boolean
 }
 
 class Ui {
-	+showMessage(message)
-	+showError(message)
+	+showMessage(message : String) : void
+	+showError(message : String) : void
 }
 
 class Parser {
-	+validateNoStorageDelimiters(value, fieldName)
+	+validateNoStorageDelimiters(value : String, fieldName : String) : void
 }
 
 class UserProfile
@@ -51,6 +52,7 @@ class UserProfile
 Command <|-- EditCommand
 Workout <|-- StrengthWorkout
 Workout <|-- RunWorkout
+WorkoutList --> "*" Workout
 
 EditCommand ..> WorkoutList
 EditCommand ..> Storage

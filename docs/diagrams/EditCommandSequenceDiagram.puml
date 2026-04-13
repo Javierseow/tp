@@ -6,6 +6,7 @@ participant ":FitLogger" as Main
 participant ":Parser" as Parser
 participant "command:EditCommand" as Cmd
 participant ":WorkoutList" as Workouts
+participant ":StrengthWorkout" as StrengthWorkout
 participant ":Storage" as Storage
 participant ":Ui" as Ui
 

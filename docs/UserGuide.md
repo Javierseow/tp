@@ -77,6 +77,8 @@ Format: `add-lift <NAME_OR_ID> w/<weightKg> s/<sets> r/<reps>`
 - `s/` — number of sets (positive integer).
 - `r/` — reps per set (positive integer).
 - The flags `w/`, `s/`, `r/` must appear in that order.
+- `weight` must use normal decimal notation such as `80` or `80.5`; scientific notation such as `8e1` is rejected.
+- `sets` and `reps` must be whole numbers from 1 to 1,000,000.
 
 Examples:
 - `add-lift Bench Press w/80 s/3 r/8`
@@ -104,6 +106,7 @@ Format: `add-run <NAME_OR_ID> d/<distanceKm> t/<durationMinutes>`
 - `d/` — distance in kilometres (positive number).
 - `t/` — duration in minutes (positive number, decimals allowed e.g. `25.5`).
 - The flags `d/`, `t/` must appear in that order.
+- Distance and duration must use normal decimal notation such as `5` or `5.0`; scientific notation such as `5e0` is rejected.
 
 Examples:
 
@@ -146,6 +149,8 @@ Important:
 - Use full field names in `edit` commands.
 - Shorthand flags such as `d/` and `t/` are for `add-run`, not `edit`.
 - For example, use `edit 1 distance/5` instead of `edit 1 d/5`.
+- Decimal fields (`weight`, `distance`, `duration`) must use normal decimal notation, not `NaN`, `Infinity`, or scientific notation.
+- Integer fields (`sets`, `reps`) must be whole numbers from 1 to 1,000,000.
 
 Invalid input example:
 `edit 1 weight/abc`
@@ -160,6 +165,8 @@ Expected error:
 Deletes one workout by index.
 
 Format: `delete <index>`
+
+The command accepts exactly one index. Extra values such as `delete 1 2` are rejected.
 
 Examples:
 - `delete 1`
@@ -204,6 +211,8 @@ Here's your past exercises
 Shows workouts completed on the specified date.
 
 Format: `search-date <YYYY-MM-DD>`
+
+The command accepts exactly one date. Extra dates or words after the date are rejected.
 
 Example:
 - `search-date 2026-03-15`
@@ -599,6 +608,8 @@ Saves data and closes FitLogger.
 
 Format: `exit`
 
+The command does not take any arguments. Extra words such as `exit now` are rejected.
+
 --- 
 
 ### Getting help: `help`
@@ -619,9 +630,14 @@ FitLogger includes an upgraded parser designed to catch common data entry mistak
 
 #### Input Validation
 When you enter data, the parser checks for the following:
+- **Integer Limits:** Workout indexes, shortcut IDs, sets, and reps must be positive integers from 1 to 1,000,000.
+- **Decimal Format:** Weight, distance, and duration must use ordinary decimal notation such as `80`, `80.5`, or `5.0`. Scientific notation, `NaN`, and `Infinity` are rejected.
 - **Missing Flags:** If you forget a mandatory flag (like `w/` in `add-lift`), FitLogger will identify the missing component and show you the correct usage.
-- **Type Mismatches:** If you enter text where a number is expected (e.g., `weight/abc`), you will receive a specific error: `Invalid number format`.
+- **Type Mismatches:** If you enter text where a number is expected (e.g., `weight/abc`), you will receive a specific error such as `Invalid weight value: abc`.
 - **Logic Bounds:** The parser prevents "impossible" data. For example, setting a height of `0.1m` or a weight of `1000kg` will trigger a warning to ensure your profile remains accurate.
+
+#### Logging
+FitLogger keeps diagnostic logs in `logs/fitlogger.log` for troubleshooting. These log messages are not printed in the command window during normal use, so user-facing output stays focused on command results and errors.
 
 #### Error Handling Strategy
 If a command fails, FitLogger will not crash. Instead, it will:

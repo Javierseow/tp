@@ -36,6 +36,7 @@ import java.time.YearMonth;
 import java.time.format.DateTimeParseException;
 
 public class Parser {
+    public static final int MAX_INTEGER_INPUT = 1_000_000;
 
     public static Command parse(String fullCommand, WorkoutList workouts,
             ExerciseDictionary dictionary) throws FitLoggerException {
@@ -52,7 +53,7 @@ public class Parser {
             return parseSearchDate(arguments);
 
         case "exit":
-            return new ExitCommand();
+            return parseExit(arguments);
 
         case "train":
             return parseTrainMuscle(arguments, dictionary);
@@ -146,8 +147,8 @@ public class Parser {
         }
 
         String name = runInfo[0].trim();
-        try {
-            int shortcutId = Integer.parseInt(name);
+        if (name.matches("\\d+")) {
+            int shortcutId = parsePositiveIntegerWithinLimit(name, "Shortcut ID");
             String dictionaryName = dictionary.getRunName(shortcutId);
 
             if (dictionaryName == null) {
@@ -155,9 +156,6 @@ public class Parser {
                         + "Type 'view-database' to see available shortcuts.");
             }
             name = dictionaryName;
-
-        } catch (NumberFormatException e) {
-            // normal string like "Easy Run"
         }
 
         validateNoStorageDelimiters(name, "Run name");
@@ -172,10 +170,15 @@ public class Parser {
                         + "Usage: add-run <name_or_id> d/<distanceKm> t/<durationMinutes>");
             }
 
-            distance = Double.parseDouble(runInfo[1].trim());
-            durationMinutes = Double.parseDouble(runInfo[2].trim());
+            String distanceText = runInfo[1].trim();
+            String durationText = runInfo[2].trim();
+            if (!isPlainDecimalNumber(distanceText) || !isPlainDecimalNumber(durationText)) {
+                throw new NumberFormatException();
+            }
+            distance = Double.parseDouble(distanceText);
+            durationMinutes = Double.parseDouble(durationText);
         } catch (NumberFormatException e) {
-            throw new FitLoggerException("Distance and duration must be valid numbers.\n"
+            throw new FitLoggerException("Distance and duration must be valid decimal numbers.\n"
                     + "Usage: add-run <name> d/<distanceKm> t/<durationMinutes>");
         }
 
@@ -221,8 +224,8 @@ public class Parser {
         }
 
         String name = info[0].trim();
-        try {
-            int shortcutId = Integer.parseInt(name);
+        if (name.matches("\\d+")) {
+            int shortcutId = parsePositiveIntegerWithinLimit(name, "Shortcut ID");
             String dictionaryName = dictionary.getLiftName(shortcutId);
 
             if (dictionaryName == null) {
@@ -231,9 +234,6 @@ public class Parser {
                                 + "Type 'view-database' to see available shortcuts.");
             }
             name = dictionaryName;
-
-        } catch (NumberFormatException e) {
-            // normal string like "Bench Press".
         }
 
         validateNoStorageDelimiters(name, "Exercise name");
@@ -248,9 +248,13 @@ public class Parser {
                 throw new FitLoggerException("Invalid format for add-lift.\n"
                         + "Usage: add-lift <name_or_id> w/<weightKg> s/<sets> r/<reps>");
             }
-            weight = Double.parseDouble(info[1].trim());
-            sets = Integer.parseInt(info[2].trim());
-            reps = Integer.parseInt(info[3].trim());
+            String weightText = info[1].trim();
+            if (!isPlainDecimalNumber(weightText)) {
+                throw new NumberFormatException();
+            }
+            weight = Double.parseDouble(weightText);
+            sets = parsePositiveIntegerWithinLimit(info[2].trim(), "Sets");
+            reps = parsePositiveIntegerWithinLimit(info[3].trim(), "Reps");
         } catch (NumberFormatException e) {
             throw new FitLoggerException(
                     "Weight must be a decimal number; sets and reps must be integers.\n"
@@ -259,12 +263,6 @@ public class Parser {
 
         if (weight < 0) {
             throw new FitLoggerException("Weight cannot be negative.");
-        }
-        if (sets <= 0) {
-            throw new FitLoggerException("Sets must be a positive integer.");
-        }
-        if (reps <= 0) {
-            throw new FitLoggerException("Reps must be a positive integer.");
         }
 
         Workout strength = new StrengthWorkout(name, weight, sets, reps, LocalDate.now());
@@ -290,16 +288,7 @@ public class Parser {
             throw new FitLoggerException("Shortcut type must be 'lift' or 'run'.");
         }
 
-        int id;
-        try {
-            id = Integer.parseInt(parts[1].trim());
-        } catch (NumberFormatException e) {
-            throw new FitLoggerException("Shortcut ID must be a number.");
-        }
-
-        if (id <= 0) {
-            throw new FitLoggerException("Shortcut ID must be a positive number.");
-        }
+        int id = parsePositiveIntegerWithinLimit(parts[1].trim(), "Shortcut ID");
 
         String name = parts[2].trim();
         validateNoStorageDelimiters(name, "Shortcut name");
@@ -331,16 +320,7 @@ public class Parser {
                     "Invalid format for edit.\n" + "Usage: edit <index> <field>/<value>");
         }
 
-        int index;
-        try {
-            index = Integer.parseInt(editParts[0].trim());
-        } catch (NumberFormatException exception) {
-            throw new FitLoggerException("Workout index must be a positive integer.");
-        }
-
-        if (index <= 0) {
-            throw new FitLoggerException("Workout index must be a positive integer.");
-        }
+        int index = parsePositiveIntegerWithinLimit(editParts[0].trim(), "Workout index");
 
         String[] fieldValue = splitInput(editParts[1], "/", 2);
         if (fieldValue.length < 2) {
@@ -375,19 +355,21 @@ public class Parser {
             throw new FitLoggerException(
                     "Please specify a workout index to delete. Usage: delete <index>");
         }
-
-        final int oneBasedIndex;
-        try {
-            oneBasedIndex = Integer.parseInt(arguments.trim());
-        } catch (NumberFormatException exception) {
-            throw new FitLoggerException("Workout index must be a positive integer.");
+        if (splitInput(arguments, " ", 2).length > 1) {
+            throw new FitLoggerException("Invalid format for delete.\nUsage: delete <index>");
         }
 
-        if (oneBasedIndex <= 0) {
-            throw new FitLoggerException("Workout index must be a positive integer.");
-        }
+        final int oneBasedIndex =
+                parsePositiveIntegerWithinLimit(arguments.trim(), "Workout index");
 
         return new DeleteCommand(oneBasedIndex);
+    }
+
+    private static Command parseExit(String arguments) throws FitLoggerException {
+        if (!arguments.isBlank()) {
+            throw new FitLoggerException("Invalid format for exit.\nUsage: exit");
+        }
+        return new ExitCommand();
     }
 
     private static Command parseTrainMuscle(String arguments, ExerciseDictionary dictionary)
@@ -416,25 +398,27 @@ public class Parser {
             throw new FitLoggerException("Invalid format.\nUsage: " + usage);
         }
 
+        int id;
         try {
-            int id = Integer.parseInt(parts[0].trim());
-            if (!dictionary.getLiftShortcuts().containsKey(id)) {
-                throw new FitLoggerException("Shortcut does not exist in database.\n"
-                        + "Perform 'view-database' for all available shortcuts");
-            }
-            String muscleGroup = parts[1].trim().toUpperCase().replace(' ', '_');
-            if (!MuscleGroup.isValid(muscleGroup)) {
-                throw new FitLoggerException("Muscle group does not exist in database.\n"
-                        + "Perform 'view-muscle-groups' for all available shortcuts");
-            }
-            if (isTag) {
-                return new TagMuscleCommand(id, MuscleGroup.valueOf(muscleGroup), dictionary);
-            }
-            return new UntagMuscleCommand(id, MuscleGroup.valueOf(muscleGroup), dictionary);
-        } catch (NumberFormatException e) {
-            throw new FitLoggerException("Input a valid shortcut ID.\n"
+            id = parsePositiveIntegerWithinLimit(parts[0].trim(), "Shortcut ID");
+        } catch (FitLoggerException e) {
+            throw new FitLoggerException("Input a valid shortcut ID not greater than "
+                    + MAX_INTEGER_INPUT + ".\n"
                     + "Perform 'view-database' for all available shortcuts");
         }
+        if (!dictionary.getLiftShortcuts().containsKey(id)) {
+            throw new FitLoggerException("Shortcut does not exist in database.\n"
+                    + "Perform 'view-database' for all available shortcuts");
+        }
+        String muscleGroup = parts[1].trim().toUpperCase().replace(' ', '_');
+        if (!MuscleGroup.isValid(muscleGroup)) {
+            throw new FitLoggerException("Muscle group does not exist in database.\n"
+                    + "Perform 'view-muscle-groups' for all available shortcuts");
+        }
+        if (isTag) {
+            return new TagMuscleCommand(id, MuscleGroup.valueOf(muscleGroup), dictionary);
+        }
+        return new UntagMuscleCommand(id, MuscleGroup.valueOf(muscleGroup), dictionary);
     }
 
     private static Command parseLiftMuscleGroup(String arguments, ExerciseDictionary dictionary)
@@ -442,17 +426,19 @@ public class Parser {
         if (arguments.isBlank()) {
             throw new FitLoggerException("Missing arguments.\nUsage: muscle-groups <shortcut_ID>");
         }
+        int id;
         try {
-            int id = Integer.parseInt(arguments.trim());
-            if (!dictionary.getLiftShortcuts().containsKey(id)) {
-                throw new FitLoggerException("Shortcut does not exist in database.\n"
-                        + "Perform 'view-database' for all available shortcuts");
-            }
-            return new LiftMuscleGroupsCommand(id, dictionary);
-        } catch (NumberFormatException e) {
-            throw new FitLoggerException("Input a valid shortcut ID.\n"
+            id = parsePositiveIntegerWithinLimit(arguments.trim(), "Shortcut ID");
+        } catch (FitLoggerException e) {
+            throw new FitLoggerException("Input a valid shortcut ID not greater than "
+                    + MAX_INTEGER_INPUT + ".\n"
                     + "Perform 'view-database' for all available shortcuts");
         }
+        if (!dictionary.getLiftShortcuts().containsKey(id)) {
+            throw new FitLoggerException("Shortcut does not exist in database.\n"
+                    + "Perform 'view-database' for all available shortcuts");
+        }
+        return new LiftMuscleGroupsCommand(id, dictionary);
     }
 
     /**
@@ -470,6 +456,10 @@ public class Parser {
         if (arguments.isBlank()) {
             throw new FitLoggerException(
                     "Missing arguments for search-date.\nUsage: search-date <YYYY-MM-DD>");
+        }
+        if (splitInput(arguments, " ", 2).length > 1) {
+            throw new FitLoggerException(
+                    "Invalid format for search-date.\nUsage: search-date <YYYY-MM-DD>");
         }
 
         try {
@@ -562,6 +552,37 @@ public class Parser {
      */
     public static String[] splitInput(String line, String splitCharacter, int maxSplit) {
         return line.trim().split("\\s*" + splitCharacter + "\\s*", maxSplit);
+    }
+
+    /**
+     * Returns true only for ordinary decimal notation, without scientific notation.
+     */
+    public static boolean isPlainDecimalNumber(String value) {
+        return value != null && value.trim().matches("-?\\d+(\\.\\d+)?");
+    }
+
+    /**
+     * Parses positive integer input and rejects values above the application limit.
+     */
+    public static int parsePositiveIntegerWithinLimit(String value, String fieldName)
+            throws FitLoggerException {
+        try {
+            int parsedValue = Integer.parseInt(value.trim());
+            if (parsedValue <= 0) {
+                throw new FitLoggerException(fieldName + " must be a positive integer.");
+            }
+            if (parsedValue > MAX_INTEGER_INPUT) {
+                throw new FitLoggerException(fieldName + " must not exceed "
+                        + MAX_INTEGER_INPUT + ".");
+            }
+            return parsedValue;
+        } catch (NumberFormatException exception) {
+            if (value.trim().matches("\\d+")) {
+                throw new FitLoggerException(fieldName + " must not exceed "
+                        + MAX_INTEGER_INPUT + ".");
+            }
+            throw new FitLoggerException(fieldName + " must be a positive integer.");
+        }
     }
 
     private static Command parseViewCalendar(String arguments) throws FitLoggerException {

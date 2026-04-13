@@ -2,6 +2,10 @@
 hide circle
 skinparam classAttributeIconSize 0
 
+abstract class Command {
+    + execute(...): void
+}
+
 abstract class Workout {
     # description: String
     # date: LocalDate
@@ -35,9 +39,10 @@ class StrengthWorkout {
 
 class AddWorkoutCommand {
     - workoutToAdd: Workout
-    + execute(Storage, WorkoutList, Ui, UserProfile): void
+    + execute(...): void
 }
 
+Command <|-- AddWorkoutCommand
 Workout <|-- RunWorkout
 Workout <|-- StrengthWorkout
 AddWorkoutCommand --> Workout : workoutToAdd

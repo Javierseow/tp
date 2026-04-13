@@ -18,8 +18,6 @@ The parsing logic is centralized in the `Parser#parse()` method. It follows a tw
 
 The following sequence diagram illustrates the internal logic of the `Parser` when a user inputs an `add-run` or `delete` command:
 
-![Parser Sequence Diagram](out/parserdesign/parserdesign.png)
-
 #### Design Considerations
 
 **Aspect: How the Parser is implemented**
@@ -31,6 +29,9 @@ The following sequence diagram illustrates the internal logic of the `Parser` wh
 
 **Aspect: Data Validation**
 * The parser ensures that no user-inputted text (like workout names) contains reserved characters (`|` or `/`) used by the `Storage` component. This prevents file corruption during save/load operations.
+* Integer inputs such as workout indexes, shortcut IDs, sets, and reps are capped at 1,000,000 to avoid accepting unrealistic values or integer-overflow edge cases.
+* Decimal workout values such as weight, distance, and duration are restricted to ordinary decimal notation. Inputs such as `NaN`, `Infinity`, or scientific notation (for example, `8e1`) are rejected before they can enter the workout model.
+* Commands with fixed arity, such as `delete`, `search-date`, and `exit`, reject extra arguments so the parser does not silently ignore accidental input.
 
 ### Enhancement 1: `EditCommand`
 
@@ -110,10 +111,12 @@ Key safeguards:
 
 - **Delimiter safety**: edited workout names are rejected when they contain reserved storage separators.
 - **Finite numeric values**: `NaN` and `Infinity` are rejected for distance, duration, and weight.
+- **Plain decimal notation**: scientific notation is rejected for editable distance, duration, and weight fields to keep behavior aligned with the User Guide examples.
+- **Integer bounds**: edited sets and reps are capped at 1,000,000 to avoid overflow and unrealistic values.
 - **Domain constraints**:
   - distance, duration > 0
   - weight >= 0
-  - sets, reps > 0
+  - sets, reps > 0 and <= 1,000,000
 
 These rules prevent invalid in-memory state and malformed persisted data.
 
@@ -126,6 +129,7 @@ These rules prevent invalid in-memory state and malformed persisted data.
 - Type mismatch handling (for example, lift-only fields on run workouts).
 - Delimiter injection prevention for edited names.
 - Rejection of non-finite numeric values (`NaN`, `Infinity`).
+- Rejection of scientific notation and overlarge numeric values.
 
 This verifies robust behavior under realistic user mistakes and malformed input.
 
@@ -162,7 +166,7 @@ Supported formats:
 
 The command is intentionally simple and cohesive:
 
-1. Parser identifies the `delete` command and validates the argument as a positive one-based index.
+1. Parser identifies the `delete` command and validates that exactly one positive one-based index was provided.
 2. `DeleteCommand` stores the parsed index as command state.
 3. During execution, the command checks only runtime concerns such as index bounds and persistence.
 4. If the index is valid, the workout is removed from `WorkoutList`; otherwise, user sees validation feedback.
@@ -204,6 +208,8 @@ This approach avoids ambiguity and keeps deletion behavior predictable.
 
 - Blank-input usage message.
 - Rejection of non-numeric input.
+- Rejection of extra indexes such as `delete 1 2`.
+- Rejection of overflowing or overlarge indexes above 1,000,000.
 - Rejection of zero as an invalid index.
 
 This ensures the index-only deletion flow remains stable and regressions are caught early.
@@ -292,8 +298,8 @@ the command stateless until it runs.
    `splitInput(arguments, "w/|s/|r/", 4)`.
 3. Validate that exactly four parts were produced (name + three numeric fields).
 4. Validate the exercise name against reserved storage delimiters (`|` and `/`).
-5. Parse `weight` as a `double`, `sets` and `reps` as `int`; throw on parse failure.
-6. Apply domain constraints: weight >= 0, sets > 0, reps > 0.
+5. Parse `weight` as a plain decimal, and `sets` and `reps` as bounded integers; throw on parse failure.
+6. Apply domain constraints: weight >= 0, sets > 0, reps > 0, sets/reps <= 1,000,000.
 7. Construct and return `new AddWorkoutCommand(new StrengthWorkout(...))`.
 
 `AddWorkoutCommand.execute(...)` performs:
@@ -341,9 +347,11 @@ the full `EditCommand` design.
 | Missing arguments | `Missing arguments for add-lift.` + usage hint |
 | Missing flag (e.g. no `r/`) | `Invalid format for add-lift.` + usage hint |
 | Non-numeric weight/sets/reps | `Weight must be a decimal number; sets and reps must be integers.` |
+| Scientific notation weight (e.g. `8e1`) | `Weight must be a decimal number; sets and reps must be integers.` |
 | Negative weight | `Weight cannot be negative.` |
 | Zero or negative sets | `Sets must be a positive integer.` |
 | Zero or negative reps | `Reps must be a positive integer.` |
+| Sets or reps above 1,000,000 | `Sets/Reps must not exceed 1000000.` |
 | Name contains `\|` or `/` | `Exercise name must not contain '\|' or '/'` |
 
 #### Design considerations
@@ -439,9 +447,10 @@ Validation is split between `Parser.parseAddRun(...)` (format-level) and `RunWor
 |Missing arguments|`Missing arguments for add-run.` + usage hint|
 |Missing flag (e.g. no `d/`)|`Invalid format for add-run.` + usage hint|
 |Non-numeric distance/duration|Parse error with usage hint|
+|Scientific notation distance/duration|Parse error with usage hint|
 |Zero or negative distance|`Distance must be a positive number.`|
 |Zero or negative duration|`Duration must be a positive number.`|
-|Non-finite value (`NaN`, `Infinity`)|`Distance must be a positive number.` / `Duration must be a positive number.`|
+|Non-finite value (`NaN`, `Infinity`)|Parse error with usage hint|
 
 #### Design considerations
 
@@ -682,9 +691,9 @@ Using a shortcut ID in `add-lift` (e.g. `add-lift 2 w/80 s/3 r/8`) triggers a re
 
 ![Shortcut Resolution Sequence Diagram](images/ShortcutResolutionSequenceDiagram.png)
 
-The resolution logic is a try-catch around `Integer.parseInt(name)`:
-- If parsing succeeds, `dictionary.getLiftName(id)` is called. A `null` return means the ID does not exist, and a `FitLoggerException` is thrown pointing the user to `view-database`.
-- If `NumberFormatException` is thrown, the token is treated as a plain-text name and used as-is.
+The resolution logic first checks whether the name token contains only digits:
+- If it does, the token is parsed using `parsePositiveIntegerWithinLimit(...)` and resolved through the relevant dictionary. A `null` return means the ID does not exist, and a `FitLoggerException` is thrown pointing the user to `view-database`.
+- If it does not, the token is treated as a plain-text name and used as-is.
 
 This means numeric IDs and full names are both accepted with no special flag needed, and the resolution is entirely a parsing concern — `StrengthWorkout` and `AddWorkoutCommand` are unchanged.
 
@@ -695,8 +704,9 @@ This means numeric IDs and full names are both accepted with no special flag nee
 | Missing arguments | `Missing arguments.` + usage hint |
 | Fewer than 3 parts | `Invalid format.` + usage hint |
 | Type not `lift` or `run` | `Shortcut type must be 'lift' or 'run'.` |
-| Non-numeric ID | `Shortcut ID must be a number.` |
-| ID ≤ 0 | `Shortcut ID must be a positive number.` |
+| Non-numeric ID | `Shortcut ID must be a positive integer.` |
+| ID <= 0 | `Shortcut ID must be a positive integer.` |
+| ID above 1,000,000 | `Shortcut ID must not exceed 1000000.` |
 | Name contains `\|` or `/` | `Shortcut name must not contain '\|' or '/'` |
 | ID not found in database | `Shortcut ID [n] does not exist. Type 'view-database' to see available shortcuts.` |
 
@@ -745,6 +755,7 @@ search-date <YYYY-MM-DD>
 
 - Missing date throws `FitLoggerException` with usage hint.
 - Invalid date format throws `FitLoggerException` with usage hint.
+- Extra arguments after the date throw `FitLoggerException` with usage hint.
 - Empty result set is handled cleanly in UI.
 
 ---
@@ -767,6 +778,23 @@ If save fails, the app now shows clear error messages instead of always implying
 ![ExitCommandClassDiagram](images/ExitCommandClassDiagram.png)
 
 ![ExitCommandSequenceDiagram](images/ExitCommandSequenceDiagram.png)
+
+---
+
+### Logging Design
+
+#### Purpose and user value
+
+FitLogger records diagnostic information for troubleshooting without cluttering the command-line interface. This keeps normal user output readable while still preserving useful execution details for developers.
+
+#### Design overview
+
+1. `LoggingConfig.configure()` removes the default console handlers from the root Java logger.
+2. It registers a `FileHandler` that appends log entries to `logs/fitlogger.log`.
+3. `FitLogger` configures logging during normal startup.
+4. `Command` also configures logging in a static initializer so command tests and direct command construction use the same non-console logging behavior.
+
+If the log file cannot be created, logging is disabled instead of printing log records into the user-facing terminal.
 
 ---
 
@@ -1190,10 +1218,7 @@ helper method.
 2.  **Command Dispatch:** A `switch` block routes the `commandWord` to the appropriate command constructor 
   (e.g., `DeleteCommand`, `ExitCommand`) or specialized sub-parser methods (e.g., `parseAddRun`, `parseAddLift`).
 
-The following sequence diagram illustrates the internal logic of the `Parser` when handling `add-run` or 
-`delete` commands:
-
-![Parser Sequence Diagram](../out/parser-design/parser-design.png)
+The parser follows the same `parse-then-execute` flow used by the command features described above.
 
 ---
 
