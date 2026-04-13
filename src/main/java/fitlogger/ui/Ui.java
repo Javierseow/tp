@@ -178,6 +178,15 @@ public class Ui {
         showLine();
     }
 
+    public void showLastCardio(RunWorkout run) {
+        showLine();
+        showMessage("Last recorded cardio for: " + run.getDescription());
+        showMessage("  Date     : " + run.getDate());
+        showMessage("  Distance : " + run.getDistance() + "km");
+        showMessage("  Duration : " + run.getDurationMinutes() + " mins");
+        showLine();
+    }
+
     /**
      * Displays the personal record entry for a given exercise.
      * Shows weight/sets/reps for strength workouts, distance/duration for runs.
