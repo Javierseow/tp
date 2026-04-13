@@ -18,14 +18,15 @@ FitLogger is a desktop fitness tracking application for users who prefer a CLI. 
 
 ### Enhancements implemented
 
-#### Enhancement 1: Exercise Shortcut System (`ExerciseDictionary`, `AddShortcutCommand`, `ViewDatabaseCommand`)
+#### Enhancement 1: Exercise Shortcut System (`ExerciseDictionary`, `AddShortcutCommand`, `DeleteShortcutCommand`, `ViewDatabaseCommand`)
 
 Designed and implemented a full exercise shortcut system that lets users log workouts using short numeric IDs instead of typing full exercise names each time.
 
-This involved three interconnected parts:
+This involved four interconnected parts:
 
-- **`ExerciseDictionary`**: a new class holding two `TreeMap<Integer, String>` maps (one for lifts, one for runs), pre-loaded with default exercises. `TreeMap` was chosen deliberately over `HashMap` so entries always display in ascending ID order.
-- **`AddShortcutCommand`**: allows users to define custom shortcuts at runtime via `add-shortcut <lift/run> <ID> <name>`. Includes full validation: type checking, positive integer ID enforcement, and storage delimiter rejection (`|` and `/`).
+- **`ExerciseDictionary`**: a new class holding two `TreeMap<Integer, String>` maps (one for lifts, one for runs), pre-loaded with default exercises. `TreeMap` was chosen deliberately over `HashMap` so entries always display in ascending ID order. Engineered to cleanly manage state when interacting with teammate's muscle-tag features.
+- **`AddShortcutCommand`**: allows users to define custom shortcuts at runtime via `add-shortcut <lift/run> <ID> <name>`. Includes full validation: type checking, positive integer ID enforcement (handling `+` overflow edge cases), and strict storage delimiter rejection (`|` and `/`).
+- **`DeleteShortcutCommand`**: allows users to safely remove custom shortcuts. Engineered the deletion and overwrite logic to cleanly wipe associated muscle tags, preventing "phantom metadata" bugs when a teammate's muscle-tagging feature interacts with the database.
 - **`ViewDatabaseCommand`**: displays the full shortcut database via `view-database`.
 - **Shortcut resolution in `add-lift` and `add-run`**: integrated ID-to-name resolution into the parser so that both `add-lift 2 w/80 s/3 r/8` and `add-lift Bench Press w/80 s/3 r/8` are valid inputs, with no special flag required.
 
@@ -49,6 +50,7 @@ Wrote the following sections:
 - **Logging a strength workout: `add-lift`**
 - **Exercise shortcut database: `view-database`**
 - **Adding a custom shortcut: `add-shortcut`**
+- **Deleting a custom shortcut: `delete-shortcut`**
 
 ---
 
@@ -57,18 +59,21 @@ Wrote the following sections:
 Wrote the following sections:
 
 - **Enhancement 3: `add-lift` command and `StrengthWorkout`**: class-level design, sequence of events, storage format, validation table, and design considerations.
-- **Enhancement 7: Exercise Shortcut System**: full design write-up covering `ExerciseDictionary`, `AddShortcutCommand`, `ViewDatabaseCommand`, and shortcut resolution in `add-lift`. Includes component-level behavior, validation table, and design considerations with alternatives discussed.
+- **Enhancement 7: Exercise Shortcut System**: full design write-up covering `ExerciseDictionary`, `AddShortcutCommand`, `DeleteShortcutCommand`, `ViewDatabaseCommand`, and shortcut resolution in `add-lift`. Includes component-level behavior, validation table, and design considerations with alternatives discussed.
+- **Manual Testing Instructions**: Authored the step-by-step manual testing guide for the Exercise Shortcut Database and Persistence.
+- **User Stories**: Contributed the FitLogger-specific user stories targeting the hybrid athlete and power-user workflows.
 
-**UML diagrams contributed:**
+- **UML diagrams contributed:**
 
 | Diagram | Type | Status |
 |---|---|---|
 | `AddWorkoutClassDiagram` | Class | Updated — fixed incorrect `execute()` signature (missing `UserProfile`) and marked `toFileFormat()` as `{abstract}` |
 | `AddLiftSequenceDiagram` | Sequence | Updated — fixed incorrect `Parser.parse()` argument (`storage` → `dictionary`) and missing `UserProfile` in `execute()` |
-| `AddShortcutClassDiagram` | Class | New — shows `ExerciseDictionary` with `AddShortcutCommand` (mutates) and `ViewDatabaseCommand` (reads) |
-| `AddShortcutSequenceDiagram` | Sequence | New — shows the `add-shortcut` command pipeline |
+| `AddShortcutClassDiagram` | Class | New — shows `ExerciseDictionary` with `AddShortcutCommand` (mutates), `DeleteShortcutCommand` (mutates), and `ViewDatabaseCommand` (reads) |
+| `AddShortcutSequenceDiagram` | Sequence | New — shows the `add-shortcut` command pipeline and persistence |
 | `ShortcutResolutionSequenceDiagram` | Sequence | New — shows shortcut ID resolution inside `Parser.parseAddLift(...)` before `StrengthWorkout` construction |
- 
+| `ExerciseDictionaryObjectDiagram` | Object | New — provides a memory snapshot of the internal maps and enum sets after adding a custom shortcut and muscle tags |
+
 ---
 
 ### Contributions to team-based tasks
@@ -85,12 +90,13 @@ Wrote the following sections:
 
 The exercise shortcut system lets users log workouts by typing a short numeric ID instead of the full exercise name every time. For example, `add-lift 2 w/80 s/3 r/8` resolves to `Bench Press` via the database, avoiding repetitive typing.
 
-The system has three parts:
+The system has four parts:
 - `ExerciseDictionary`: the in-memory data model storing ID-to-name mappings for lifts and runs.
 - `AddShortcutCommand`: lets users extend the database with their own shortcuts at runtime.
+- `DeleteShortcutCommand`: lets users cleanly remove custom shortcuts and their associated metadata.
 - `ViewDatabaseCommand`: lets users see what shortcuts are currently available.
 
-The database ships with four default lift shortcuts and three default run shortcuts. Custom shortcuts added via add-shortcut are permanently persisted to the save file alongside the user's profile and workout history.
+The database ships with four default lift shortcuts and three default run shortcuts. Custom shortcuts added via `add-shortcut` are permanently persisted to the save file alongside the user's profile and workout history.
 
 #### Class-level design
 

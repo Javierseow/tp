@@ -297,7 +297,7 @@ public class EditCommand extends Command {
             }
             return value;
         } catch (NumberFormatException exception) {
-            if (newValue.trim().matches("\\d+")) {
+            if (newValue.trim().matches("\\+?\\d+")) {
                 throw new FitLoggerException(fieldName + " must not exceed "
                         + Parser.MAX_INTEGER_INPUT + ".");
             }

@@ -66,6 +66,7 @@ public class Ui {
                 + "    view-database                                  View exercise shortcuts and their IDs\n"
                 + "    view-detailed-database                         View exercise shortcuts, IDs, and muscle groups\n"
                 + "    add-shortcut <lift/run> <ID> <name>            Add a custom exercise shortcut\n"
+                + "    delete-shortcut <lift/run> <ID>                Delete a custom exercise shortcut\n"
                 + "    view-total-mileage                             View total distance ran across all run workouts\n"
                 + "    lastlift <EXERCISE_NAME>                       View most recent lift for an exercise\n"
                 + "    view-muscle-groups                             View all available muscle groups\n"

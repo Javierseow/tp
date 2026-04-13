@@ -1,0 +1,36 @@
+@startuml
+hide empty members
+
+object "<u>:ExerciseDictionary</u>" as ExerciseDictionary
+
+object "<u>liftDictionary:TreeMap</u>" as LiftDictionary
+object "<u>runDictionary:TreeMap</u>" as RunDictionary
+object "<u>liftMuscleGroups:HashMap</u>" as MuscleGroups
+
+ExerciseDictionary --> LiftDictionary
+ExerciseDictionary --> RunDictionary
+ExerciseDictionary --> MuscleGroups
+
+object "<u>lift1:String</u>" as Lift1 {
+    "Squat"
+}
+object "<u>lift99:String</u>" as Lift99 {
+    "Muscle Up"
+}
+
+LiftDictionary --> Lift1 : key = 1
+LiftDictionary --> Lift99 : key = 99
+
+object "<u>run1:String</u>" as Run1 {
+    "Easy Run"
+}
+RunDictionary --> Run1 : key = 1
+
+object "<u>squatMuscles:EnumSet</u>" as EnumSet {
+    QUADS
+    GLUTES
+    HAMSTRING
+}
+MuscleGroups --> EnumSet : key = 1
+
+@enduml
