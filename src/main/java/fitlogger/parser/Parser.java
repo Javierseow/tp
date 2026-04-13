@@ -85,10 +85,8 @@ public class Parser {
         case "add-lift":
             return parseAddLift(arguments, workouts, dictionary);
 
-        case "list":
-            // fallthrough intentional — same behaviour as history
         case "history":
-            return new ViewHistoryCommand();
+            return parseViewHistory(arguments);
 
         case "help":
             return new HelpCommand();
@@ -601,6 +599,23 @@ public class Parser {
         } catch (DateTimeParseException e) {
             throw new FitLoggerException(
                     "Invalid calendar format. Use YYYY-MM (e.g., view-calendar 2026-04)");
+        }
+    }
+
+    private static Command parseViewHistory(String arguments) throws FitLoggerException {
+        if (arguments.isBlank()) {
+            return new ViewHistoryCommand();
+        }
+
+        try {
+            int count = Integer.parseInt(arguments.trim());
+            if (count <= 0) {
+                throw new FitLoggerException("History count must be a positive integer.");
+            }
+            return new ViewHistoryCommand(count);
+        } catch (NumberFormatException e) {
+            throw new FitLoggerException("Invalid format. Usage: history [number]\n" +
+                    "Number should be positive and below " + Parser.MAX_INTEGER_INPUT + ".");
         }
     }
 }

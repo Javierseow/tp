@@ -5,35 +5,42 @@ import fitlogger.storage.Storage;
 import fitlogger.ui.Ui;
 import fitlogger.workoutlist.WorkoutList;
 
-/**
- * Command to display the entire history of logged workouts.
- * Iterates through the workout list and formats them into a numbered list for the UI.
- */
 public class ViewHistoryCommand extends Command {
+    private final int numberOfEntriesToShow;
 
     /**
-     * Constructs a ViewHistoryCommand.
+     * Constructor for showing all history.
      */
     public ViewHistoryCommand() {
-        super();
+        this.numberOfEntriesToShow = -1; // Sentinel for "all"
     }
 
     /**
-     * Executes the command by printing each workout in the history.
-     * Workouts are displayed with a 1-based index for better user readability.
-     *
-     * @param storage  The storage handler.
-     * @param workouts The list of workouts to be displayed.
-     * @param ui       The user interface used to print the history.
-     * @param profile  The user profile.
+     * Constructor for showing a specific number of recent workouts.
      */
+    public ViewHistoryCommand(int count) {
+        assert count > 0 : "History count must be positive";
+        this.numberOfEntriesToShow = count;
+    }
+
     @Override
     public void execute(Storage storage, WorkoutList workouts, Ui ui, UserProfile profile) {
-        ui.showMessage("Here's your past exercises");
+        int size = workouts.getSize();
+
+        // Determine where to start printing
+        int startIndex = 0;
+        if (numberOfEntriesToShow != -1 && numberOfEntriesToShow < size) {
+            startIndex = size - numberOfEntriesToShow;
+            ui.showMessage("Showing the last " + numberOfEntriesToShow + " exercise(s):");
+        } else if (numberOfEntriesToShow >= size) {
+            ui.showMessage("You only have " + size + " exercises, showing all past exercises:");
+        } else {
+            ui.showMessage("Here's your past exercises:");
+        }
+
         ui.showLine();
-        for (int i = 0; i < workouts.getSize(); i++) {
-            // Display as 1-indexed for the user
-            ui.showMessageNoNewline(i + 1 + ". ");
+        for (int i = startIndex; i < size; i++) {
+            ui.showMessageNoNewline((i + 1) + ". ");
             ui.printWorkout(workouts.getWorkoutAtIndex(i));
         }
         ui.showLine();

@@ -73,7 +73,7 @@ public class Ui {
                 + "    tag-muscle <lift_shortcut_ID> <muscle>         Tag muscle groups to a shortcut\n"
                 + "    untag-muscle <lift_shortcut_ID> <muscle>       Remove muscle group tags\n"
                 + "    train <muscle>                                 List exercises targeting that muscle\n"
-                + "    history                                        View all logged workouts\n"
+                + "    history [NUMBER]                               View past NUMBER workouts (all if omitted)\n"
                 + "    filter <muscle_group>                          Filter workouts by muscle (e.g., filter chest)\n"
                 + "    delete <index>                                 Delete workout by number\n"
                 + "    search-date <YYYY-MM-DD>                       View workouts completed on a date\n"
