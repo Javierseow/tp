@@ -522,9 +522,12 @@ public class Parser {
             throws FitLoggerException {
         try {
             double newValue = Double.parseDouble(value);
+            if (!Double.isFinite(newValue)) {
+                throw new FitLoggerException("Invalid input. Please provide a real number.");
+            }
             if (newValue < lowerBound || newValue > upperBound) {
                 throw new FitLoggerException("Your Height/Weight is unrealistically low/high.\n"
-                        + "Please ensure your values are correctly, height in m and weight in Kg");
+                        + "Please ensure your values are correct, height in m and weight in Kg");
             }
             return newValue;
         } catch (NumberFormatException e) {
