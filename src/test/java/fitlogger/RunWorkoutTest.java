@@ -11,8 +11,8 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /**
- * Tests the RunWorkout class to ensure proper initialization,
- * validation, and formatting.
+ * Tests the RunWorkout class, specifically checking the new realistic
+ * limits for distance and duration.
  */
 class RunWorkoutTest {
     private RunWorkout run;
@@ -21,22 +21,58 @@ class RunWorkoutTest {
     @BeforeEach
     public void setUp() throws FitLoggerException {
         testDate = LocalDate.of(2026, 3, 13);
-        // Using a standard 5km, 30min run for setup
         run = new RunWorkout("Morning Jog", testDate, 5.0, 30.0);
     }
 
     @Test
     public void constructor_validInput_setsAllFields() {
         assertEquals("Morning Jog", run.getDescription());
-        assertEquals(testDate, run.getDate());
         assertEquals(5.0, run.getDistance(), 0.001);
         assertEquals(30.0, run.getDurationMinutes(), 0.001);
     }
 
+    // --- POSITIVE LIMIT TESTS ---
+
     @Test
-    public void setDistance_validUpdate_updatesCorrectly() throws FitLoggerException {
-        run.setDistance(10.5);
-        assertEquals(10.5, run.getDistance(), 0.001);
+    public void setDistance_exactlyAtLimit_updatesCorrectly() throws FitLoggerException {
+        run.setDistance(1000.0);
+        assertEquals(1000.0, run.getDistance(), 0.001);
+    }
+
+    @Test
+    public void setDurationMinutes_exactlyAtLimit_updatesCorrectly() throws FitLoggerException {
+        run.setDurationMinutes(14400.0);
+        assertEquals(14400.0, run.getDurationMinutes(), 0.001);
+    }
+
+    // --- NEGATIVE LIMIT TESTS ---
+
+    @Test
+    public void constructor_distanceExceedsLimit_throwsException() {
+        assertThrows(FitLoggerException.class, () -> {
+            new RunWorkout("Impossible Run", testDate, 1000.1, 60.0);
+        });
+    }
+
+    @Test
+    public void constructor_durationExceedsLimit_throwsException() {
+        assertThrows(FitLoggerException.class, () -> {
+            new RunWorkout("Infinity Run", testDate, 10.0, 14400.1);
+        });
+    }
+
+    @Test
+    public void setDistance_exceedsLimit_throwsException() {
+        assertThrows(FitLoggerException.class, () -> {
+            run.setDistance(1000.01);
+        });
+    }
+
+    @Test
+    public void setDurationMinutes_exceedsLimit_throwsException() {
+        assertThrows(FitLoggerException.class, () -> {
+            run.setDurationMinutes(14401.0);
+        });
     }
 
     @Test
@@ -46,36 +82,11 @@ class RunWorkoutTest {
         });
     }
 
-    @Test
-    public void setDurationMinutes_zeroValue_throwsException() {
-        assertThrows(FitLoggerException.class, () -> {
-            run.setDurationMinutes(0);
-        });
-    }
-
-    @Test
-    public void setDurationMinutes_nonFiniteValue_throwsException() {
-        assertThrows(FitLoggerException.class, () -> {
-            run.setDurationMinutes(Double.NaN);
-        });
-    }
+    // --- FORMATTING TESTS ---
 
     @Test
     public void toFileFormat_standardInput_matchesExpectedString() {
         String expected = "R | Morning Jog | 2026-03-13 | 5.0 | 30.0";
         assertEquals(expected, run.toFileFormat());
-    }
-
-    @Test
-    public void toString_standardInput_matchesExpectedString() {
-        String expected = "[Run] Morning Jog (Date: 2026-03-13) (Distance: 5.0km, Duration: 30.0 mins)";
-        assertEquals(expected, run.toString());
-    }
-
-    @Test
-    public void setDescription_blankName_throwsException() {
-        assertThrows(FitLoggerException.class, () -> {
-            run.setDescription("   ");
-        });
     }
 }

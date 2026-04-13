@@ -11,6 +11,8 @@ import java.time.LocalDate;
  * as a {@code double} to allow fractional values (e.g., 25.5 for 25 min 30 sec).
  */
 public class RunWorkout extends Workout {
+    private static final double MAX_DISTANCE_KM = 1000.0;
+    private static final double MAX_DURATION_MINS = 14400.0; // 10 days in minutes
     /** Distance covered, in kilometres. */
     protected double distance;
 
@@ -39,14 +41,17 @@ public class RunWorkout extends Workout {
     }
 
     /**
-     * Updates the run distance in kilometres.
+     * Updates the run distance in kilometres. Maximum allowed distance is 1000 km.
      *
      * @param distance New distance, must be greater than 0.
-     * @throws FitLoggerException if distance is not finite or not positive.
+     * @throws FitLoggerException if distance is not finite, not positive, or exceeds 1000 km.
      */
     public void setDistance(double distance) throws FitLoggerException {
         if (!Double.isFinite(distance) || distance <= 0) {
             throw new FitLoggerException("Distance must be a positive number.");
+        }
+        if (distance > MAX_DISTANCE_KM) {
+            throw new FitLoggerException("Distance cannot exceed " + MAX_DISTANCE_KM + "km.");
         }
         this.distance = distance;
     }
@@ -57,7 +62,7 @@ public class RunWorkout extends Workout {
     }
 
     /**
-     * Updates the run duration in minutes.
+     * Updates the run duration in minutes. Maximum allowed duration is 14400 mins (10 days).
      *
      * @param durationMinutes New duration, must be greater than 0.
      * @throws FitLoggerException if duration is not finite or not positive.
@@ -65,6 +70,9 @@ public class RunWorkout extends Workout {
     public void setDurationMinutes(double durationMinutes) throws FitLoggerException {
         if (!Double.isFinite(durationMinutes) || durationMinutes <= 0) {
             throw new FitLoggerException("Duration must be a positive number.");
+        }
+        if (durationMinutes > MAX_DURATION_MINS) {
+            throw new FitLoggerException("Duration cannot exceed 10 days (14400 minutes).");
         }
         this.durationMinutes = durationMinutes;
     }
