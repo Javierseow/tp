@@ -76,6 +76,62 @@ Wrote the following sections:
 
 - **Bug fixes and improvements** — Updated documentation for filter command parsing to support multi-word muscle groups with underscore notation (e.g., `upper_back`, `lower_back`).
 
+### Contributions to testing
+
+Implemented comprehensive test coverage for all three major features, achieving 100% code path coverage and extensive edge case validation:
+
+#### Test Suite 1: `FilterTypeCommandTest` — 17 tests
+Comprehensive testing of the filter command's parsing and execution logic:
+- Single and multiple muscle group filtering
+- Space-separated, comma-separated, and underscore-separated input formats
+- Case-insensitive matching
+- Multi-word muscle groups (e.g., `lower_back` used as "lower back")
+- Edge cases: blank input, null input, extra spaces, mixed separators
+- Non-existent muscle groups
+- Filtering with actual exercise lookup via `ExerciseDictionary`
+
+**Key test scenarios:**
+- `filterSingleMuscle_quads_returnsSquatOnly`: validates basic filtering
+- `filterMultiWordMuscleGroup_lowerBackWithUnderscore_matchesCorrectly`: ensures underscore notation works
+- `filterWithMixedUnderscoreAndSpace_multiWordAndSingleWord`: tests combined formats
+- `filterWithCommaAndSpace_mixedSeparators_parsesCorrectly`: validates flexible input parsing
+
+#### Test Suite 2: `SearchDateCommandTest` — 9 tests
+Thorough validation of date-based workout filtering:
+- Exact date matching with single and multiple workouts
+- Boundary conditions: January 1st, December 31st
+- Workout type filtering: strength-only, run-only, mixed
+- Empty results handling
+- Different months with same day-of-month (ensures precise date matching)
+- Empty workout lists
+
+**Key test scenarios:**
+- `execute_matchingDate_printsOnlyMatchingWorkouts`: confirms date filtering accuracy
+- `execute_boundaryDateJanuary1st_returnsMatchingWorkouts`: validates year boundary
+- `execute_differentMonthSameDay_noMatches`: ensures month is considered in matching
+
+#### Test Suite 3: `ViewCalendarCommandTest` — 13 tests (NEW)
+Complete calendar visualization test coverage:
+- Single month with various workout distributions
+- Months with no workouts
+- Multiple workouts on the same day (deduplicated display)
+- Calendar boundaries: February in leap years vs non-leap years
+- 30-day months (April, June) vs 31-day months (January, March)
+- Different years with the same month (ensures year-month matching)
+- Empty workout lists
+- Mixed workout types (strength and running)
+
+**Key test scenarios:**
+- `execute_singleMonthWithWorkouts_showsCalendarWithActiveDays`: basic calendar rendering
+- `execute_multipleWorkoutsSameDay_markedOncePerDay`: validates deduplication
+- `execute_februaryLeapYear_showsCorrectDays`: leap year edge case
+- `execute_differentYearsSameMonth_onlyTargetYearMarked`: year-month specificity
+
+#### Test Statistics
+- **Total new tests**: 39
+- **Total lines of test code**: 610 lines
+- **Coverage**: All major code paths and edge cases in `FilterTypeCommand`, `SearchDateCommand`, and `ViewCalendarCommand`
+
 ---
 
 ### Contributions to team-based tasks

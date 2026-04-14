@@ -120,7 +120,6 @@ public class FilterTypeCommand extends Command {
         String displayCategories = String.join(", ", targetCategories);
         ui.showMessage("Workouts matching category [" + displayCategories + "]:");
         ui.showWorkoutList(filteredList);
-        ui.showLine();
     }
 
     /**
