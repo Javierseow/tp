@@ -77,6 +77,7 @@ My main focus was improving workout editing and deletion workflows, adding date-
 
 ### Review and Mentoring Contributions
 - Reviewed pull requests:
+  - [Pull Request Reviewed] - (https://github.com/AY2526S2-CS2113-F09-1/tp/pulls?q=is%3Apr+reviewed-by%3Adaniel-czj)
   - PR #[65] (https://github.com/AY2526S2-CS2113-F09-1/tp/pull/65)
   - PR #[71] (https://github.com/AY2526S2-CS2113-F09-1/tp/pull/71)
   - PR #[135] (https://github.com/AY2526S2-CS2113-F09-1/tp/pull/135)
