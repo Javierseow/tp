@@ -45,15 +45,18 @@ public class Ui {
     }
 
     /**
-     * Displays an error message prefixed with "[ERROR]".
+     * Displays an error message prefixed with "[ERROR]" surrounded by separator lines.
      *
      * @param message The error description to display.
      */
     public void showError(String message) {
+        showLine();
         System.out.println("[ERROR] " + message);
+        showLine();
     }
 
     public void showHelpMenu() {
+        showLine();
         String helpMessage = "Command Guide:\n"
                 + "    help                                           List available commands\n"
                 + "    profile view                                   View your profile\n"
@@ -71,6 +74,8 @@ public class Ui {
                 + "    view-total-mileage [DAYS]                      View total distance "
                 + "(last DAYS if provided, else all-time)\n"
                 + "    lastlift <EXERCISE_NAME>                       View most recent lift for an exercise\n"
+                + "    lastcardio <EXERCISE_NAME>                     View most recent cardio/run (alias: lastrun)\n"
+                + "    pr <EXERCISE_NAME>                             View personal record for an exercise\n"
                 + "    view-muscle-groups                             View all available muscle groups\n"
                 + "    muscle-groups <lift_shortcut_ID>               View all muscle groups for a specific exercise\n"
                 + "    tag-muscle <lift_shortcut_ID> <muscle>         Tag muscle groups to a shortcut\n"
@@ -83,6 +88,7 @@ public class Ui {
                 + "    view-calendar <YYYY-MM>                        View active days in a calendar month\n"
                 + "    exit                                           Save and close FitLogger";
         showMessage(helpMessage);
+        showLine();
     }
 
     public void showMessageNoNewline(String message) {
@@ -107,9 +113,11 @@ public class Ui {
             showMessageNoNewline(i + 1 + ". ");
             printWorkout(workouts.get(i));
         }
+        showLine();
     }
 
     public void showExerciseDatabase(ExerciseDictionary dictionary, boolean isDetailed) {
+        showLine();
         showMessage("Strength Shortcuts:");
         for (java.util.Map.Entry<Integer, String> entry : dictionary.getLiftShortcuts()
                 .entrySet()) {
@@ -132,6 +140,7 @@ public class Ui {
     }
 
     public void showMuscleGroups() {
+        showLine();
         showMessage("Here are all available muscle groups: ");
         MuscleGroup[] groups = MuscleGroup.values();
         for (int i = 0; i < groups.length; i++) {
@@ -142,11 +151,12 @@ public class Ui {
             }
         }
         showMessage("");
+        showLine();
     }
 
     /**
-     * Formats a set of muscle groups into a user-friendly comma-separated string.
-     * Example: [QUADS, GLUTES] -> "quads, glutes"
+     * Formats a set of muscle groups into a user-friendly comma-separated string. Example: [QUADS,
+     * GLUTES] -> "quads, glutes"
      */
     public String formatMuscleSet(Set<MuscleGroup> muscles) {
         if (muscles.isEmpty()) {
@@ -188,8 +198,8 @@ public class Ui {
     }
 
     /**
-     * Displays the personal record entry for a given exercise.
-     * Shows weight/sets/reps for strength workouts, distance/duration for runs.
+     * Displays the personal record entry for a given exercise. Shows weight/sets/reps for strength
+     * workouts, distance/duration for runs.
      *
      * @param prWorkout The workout entry representing the personal record.
      */

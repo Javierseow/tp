@@ -760,27 +760,28 @@ Output:
 | Action                     | Command Format                                   | Example                             |
 |----------------------------|--------------------------------------------------|-------------------------------------|
 | **Help**                   | `help`                                           | `help`                              |
-| **Add Lift**               | `add-lift <NAME_OR_ID> w/<kg> s/<sets> r/<reps>` | `add-lift Bench Press w/80 s/3 r/8` |
+| **View Profile**           | `profile view`                                   | `profile view`                      |
+| **Clear Profile**          | `profile clear`                                  | `profile clear`                     |
+| **Set Profile**            | `profile set <field> <value>`                    | `profile set weight 75`             |
 | **Add Run**                | `add-run <NAME_OR_ID> d/<dist> t/<mins>`         | `add-run Tempo Run d/5.0 t/25`      |
+| **Add Lift**               | `add-lift <NAME_OR_ID> w/<kg> s/<sets> r/<reps>` | `add-lift Bench Press w/80 s/3 r/8` |
+| **Edit Workout**           | `edit <index> <field>/<value>`                   | `edit 1 weight/85`                  |
 | **View Database**          | `view-database`                                  | `view-database`                     |
 | **View Detailed Database** | `view-detailed-database`                         | `view-detailed-database`            |
 | **Add Shortcut**           | `add-shortcut <lift/run> <ID> <name>`            | `add-shortcut lift 5 Muscle Up`     |
 | **Delete Shortcut**        | `delete-shortcut <lift/run> <ID>`                | `delete-shortcut lift 5`            |
-| **Edit Workout**           | `edit <index> <field>/<value>`                   | `edit 1 weight/85`                  |
+| **Total Mileage**          | `view-total-mileage [DAYS]`                      | `view-total-mileage 7`              |
+| **Last Lift**              | `lastlift <EXERCISE_NAME>`                       | `lastlift Bench Press`              |
+| **Last Cardio**            | `lastcardio <EXERCISE_NAME>`                     | `lastcardio Easy Run`               |
+| **Personal Record**        | `pr <EXERCISE_NAME>`                             | `pr Bench Press`                    |
+| **View Muscle Groups**     | `view-muscle-groups`                             | `view-muscle-groups`                |
+| **Exercise Muscles**       | `muscle-groups <ID>`                             | `muscle-groups 2`                   |
+| **Tag Muscle**             | `tag-muscle <ID> <muscle>`                       | `tag-muscle 1 quads`                |
+| **Untag Muscle**           | `untag-muscle <ID> <muscle>`                     | `untag-muscle 1 quads`              |
+| **Train Muscles**          | `train <muscle>`                                 | `train glutes`                      |
+| **History**                | `history [NUMBER]`                               | `history 5`                         |
+| **Filter Workout**         | `filter <MUSCLE_GROUP>`                          | `filter delts`                      |
 | **Delete Workout**         | `delete <index>`                                 | `delete 2`                          |
 | **Search by Date**         | `search-date <YYYY-MM-DD>`                       | `search-date 2026-03-15`            |
 | **View Calendar**          | `view-calendar <YYYY-MM>`                        | `view-calendar 2026-04`             |
-| **Filter Workout**         | `filter <MUSCLE_GROUP>`                          | `filter delts`                      |
-| **History**                | `history [NUMBER]`                               | `history 5`                         |
-| **View Profile**           | `profile view`                                   | `profile view`                      |
-| **Set Profile**            | `profile set <field> <value>`                    | `profile set weight 75`             |
-| **Clear Profile**          | `profile clear`                                  | `profile clear`                     |
-| **Total Mileage**          | `view-total-mileage [DAYS]`                      | `view-total-mileage 7`              |
-| **View Muscle Groups**     | `view-muscle-groups`                             | `view-muscle-groups`                |
-| **Exercise Muscles**       | `muscle-groups <ID>`                                  | `muscle-groups 2`                   |
-| **Tag Muscle**             | `tag-muscle <ID> <muscle>`                      | `tag-muscle 1 quads`                |
-| **Untag Muscle**           | `untag-muscle <ID> <muscle>`                      | `untag-muscle 1 quads`              |
-| **Train Muscles**          | `train <muscle>`                      | `train glutes`              |
-| **Last Lift**              | `lastlift <EXERCISE_NAME>`                       | `lastlift Bench Press`              |
-| **Personal Record**        | `pr <EXERCISE_NAME>`                             | `pr Bench Press`                    |
 | **Exit**                   | `exit`                                           | `exit`                              |
