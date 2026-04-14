@@ -47,46 +47,11 @@ FitLogger is a command-line fitness tracking application for hybrid athletes who
 
 #### UML Diagrams Contributed
 
-I authored the following diagrams to document the core logic and architectural relationships of my features:
-
-|**Diagram**|**Type**|**Description**|
-|---|---|---|
-|`AddRunWorkoutClassDiagram`|Class|Models the inheritance of `RunWorkout` from the abstract `Workout` base.|
-|`AddRunWorkoutSequenceDiagram`|Sequence|Illustrates the "Fail-Fast" object creation and validation flow in the `Parser`.|
-|`HistorySequenceDiagram`|Sequence|Shows the windowed search logic for retrieving a partial workout history.|
-|`MuscleTaggingClassDiagram`|Class|Displays the command hierarchy and association with `ExerciseDictionary`.|
-|`MuscleTaggingObjectDiagram`|Object|Provides a memory snapshot of the `EnumSet` metadata storage.|
-|`ProfileInheritanceDiagram`|Class|Models the tiered inheritance for View, Update, and Clear profile commands.|
-|`ProfileUpdateSequenceDiagram`|Sequence|Demonstrates the "Selective Invocation" of setters using sentinel values.|
-|`TagMuscleSequenceDiagram`|Sequence|Details the interaction between the Parser and the metadata dictionary.|
-|`ViewShoeMileageSequenceDiagram`|Sequence|Illustrates polymorphic filtering and date windowing for run analytics.|
+I authored the following diagrams:
+`AddRunWorkoutClassDiagram`, `AddRunWorkoutSequenceDiagram`, `HistorySequenceDiagram`, `MuscleTaggingClassDiagram`, `MuscleTaggingObjectDiagram`, `ProfileInheritanceDiagram`,
+`ProfileUpdateSequenceDiagram`, `TagMuscleSequenceDiagram`, `ViewShoeMileageSequenceDiagram`
 
 ### Contributions to Team-Based Tasks
 
 - Established the initial project structure and architecture that the rest of the team built on top of.
 - [Pull Requests authored](https://github.com/AY2526S2-CS2113-F09-1/tp/pulls?q=is%3Apr+author%3Adinvsh)
-
----
-
-## Contributions to the Developer Guide (Extracts)
-
-### Enhancement 6: User Profile Management
-
-The profile system utilizes a tiered inheritance model to categorize actions under a common parent, `ProfileCommand`. This ensures a unified interface for profile tasks while maintaining a clean separation of concerns.
-
-**Class Diagram: Profile Command Hierarchy**
-![ProfileInheritanceDiagram](docs/images/ProfileInheritanceDiagram.png)
-
-**Sequence Diagram: Partial Update Logic (Scenario: `profile set height 1.75`)**
-![ProfileUpdateSequenceDiagram](docs/images/ProfileUpdateSequenceDiagram.png)
-
-The sequence diagram below highlights the **Selective Invocation** logic. By utilizing sentinel values (`null` and `-1.0`), the command determines which `UserProfile` setters to trigger without affecting existing data.
-
-### Enhancement 14: Muscle Group Tagging System
-
-The system stores exercise metadata in a `Map<Integer, EnumSet<MuscleGroup>>` within the `ExerciseDictionary`.
-
-**Object Diagram: ExerciseDictionary Memory Snapshot**
-![MuscleTaggingObjectDiagram](docs/images/MuscleTaggingObjectDiagram.png)
-
-**Technical Rationale**: An `EnumSet` is used instead of a `HashSet` because it is represented internally as a bit-vector. This results in $O(1)$ lookup time and a significantly smaller memory footprint, making it ideal for the high-frequency filtering required by the `train` and `filter` commands.
