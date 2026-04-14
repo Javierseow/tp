@@ -1248,6 +1248,23 @@ This results in $O(1)$ lookup time and a significantly smaller memory footprint,
 
 Note that multi-word muscle groups (e.g. `upper back`) are supported by normalising spaces to underscores before enum lookup, so the user does not need to type `UPPER_BACK` themselves.
 
+**`FilterTypeCommand.execute(...)`** and its parser
+
+`FilterTypeCommand` allows users to filter their workout history by one or more muscle groups. Unlike `train` which searches a predetermined muscle group, `filter` takes user-specified categories and matches them against workout muscle groups:
+
+1. `parseCategories(String input)` parses comma-separated and space-separated muscle group names.
+2. Multi-word muscle groups (e.g. `upper_back`, `lower_back`) are supported by converting underscores to spaces, which matches the enum's `displayName()` output format.
+3. The parsed categories are stored in a `Set<String>` with lowercase display names (spaces, not underscores).
+4. During execution, for each workout, the command retrieves its muscle groups and checks if any match the target categories using case-insensitive comparison.
+5. Matching workouts are collected and displayed to the user.
+
+**Parsing format supported by `parseCategories(String)`:**
+- Single muscle groups: `filter pecs` or `filter delts`
+- Multi-word muscle groups with underscore: `filter upper_back` (converted to "upper back")
+- Multiple groups separated by spaces: `filter pecs triceps`
+- Multiple groups separated by commas: `filter quads,hamstring,glutes`
+- Mixed formats: `filter pecs, upper_back triceps`
+
 ---
 
 #### Persistence of muscle group tags
