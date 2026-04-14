@@ -6,8 +6,8 @@ import fitlogger.ui.Ui;
 import fitlogger.workoutlist.WorkoutList;
 
 /**
- * Command to update specific fields of the user's profile.
- * Supports partial updates where only provided non-sentinel values are changed.
+ * Command to update specific fields of the user's profile. Supports partial updates where only
+ * provided non-sentinel values are changed.
  */
 public class UpdateProfileCommand extends ProfileCommand {
     private String newName;
@@ -17,7 +17,7 @@ public class UpdateProfileCommand extends ProfileCommand {
     /**
      * Constructs an UpdateProfileCommand with the specified profile details.
      *
-     * @param newName   The new name for the user (null if not being updated).
+     * @param newName The new name for the user (null if not being updated).
      * @param newHeight The new height for the user (-1 if not being updated).
      * @param newWeight The new weight for the user (-1 if not being updated).
      */
@@ -32,13 +32,14 @@ public class UpdateProfileCommand extends ProfileCommand {
     /**
      * Updates the user profile with the new values provided and notifies the user.
      *
-     * @param storage  The storage handler.
+     * @param storage The storage handler.
      * @param workouts The list of workouts.
-     * @param ui       The user interface to show update confirmations.
-     * @param profile  The user profile to be updated.
+     * @param ui The user interface to show update confirmations.
+     * @param profile The user profile to be updated.
      */
     @Override
     public void execute(Storage storage, WorkoutList workouts, Ui ui, UserProfile profile) {
+        ui.showLine();
         if (newName != null) {
             profile.setName(newName);
             ui.showMessage("Name has been updated to " + newName);
@@ -51,5 +52,6 @@ public class UpdateProfileCommand extends ProfileCommand {
             profile.setWeight(newWeight);
             ui.showMessage("Weight has been updated to " + String.format("%.2f", newWeight) + "kg");
         }
+        ui.showLine();
     }
 }

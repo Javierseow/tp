@@ -7,9 +7,9 @@ FitLogger is a lightning-fast Command Line Interface (CLI) fitness tracker desig
 ## Quick Start
 
 1. Ensure you have Java `17` or above installed on your computer.
-2. Download the latest `fitlogger.jar` file from our [Releases](https://github.com/dinvsh/tp/releases) page.
+2. Download the latest `[CS2113-F09-1][FitLogger].jar` file from our [Releases](https://github.com/dinvsh/tp/releases) page.
 3. Copy the file to the folder where you want to store your fitness data.
-4. Open a command terminal (e.g., Command Prompt, PowerShell, or Terminal), navigate to the folder, and run the application using the command: `java -jar fitlogger.jar`
+4. Open a command terminal (e.g., Command Prompt, PowerShell, or Terminal), navigate to the folder, and run the application using the command: `java -jar [CS2113-F09-1][FitLogger].jar`
 5. Type `help` to see the list of available commands and start logging!
 
 ## Features
@@ -23,6 +23,7 @@ Format: `view-database`
 - Shortcuts are listed separately for **Strength Shortcuts** and **Run Shortcuts**.
 - The database comes pre-loaded with common exercises and their muscle groups.
 - Custom shortcuts you have added with `add-shortcut` also appear here.
+- Ignores all trailing inputs
 
 Example output:
 ```
@@ -40,11 +41,11 @@ Run Shortcuts:
 
 ---
 
-### Viewing detailed database: 'view-detailed-database'
+### Viewing detailed database: `view-detailed-database`
 
 Displays all exercise shortcuts, their IDs, and their associated muscle groups in one view.
 
-Format: 'view-detailed-database'
+Format: `view-detailed-database`
 
 - Similar to 'view-database' but with associated muscle groups for lift shortcuts shown
 - Ignores all trailing inputs
@@ -313,17 +314,21 @@ Examples:
 `view-calendar 2026-04` (Shows April 2026)
 
 Sample output:
+```
+      APRIL 2026  
 
-Plaintext
------------------------------------------------------
-      APRIL 2026
- Su  Mo  Tu  We  Th  Fr  Sa
-              1   2   3   4
-   5   6   7  [8]  9  10  11
-  12  13  14  15  16 [17] 18
-  19  20  21  22  23  24  25
-  26  27  28  29  30
------------------------------------------------------
+Su  Mo  Tu  We  Th  Fr  Sa
+
+             1   2   3   4
+
+ 5   6   7  [8]  9  10  11
+
+12  13  14  15  16 [17] 18
+
+19  20  21  22  23  24  25
+
+26  27  28  29  30
+```
 
 Invalid input example:
 
@@ -337,18 +342,23 @@ Expected error:
 
 Shows only the workouts from your history that target a specific muscle group.
 
-Format: `filter <MUSCLE_GROUP>`
+Format: `filter <MUSCLE_GROUP> [<MUSCLE_GROUP2> ...]`
 
-- The `<MUSCLE_GROUP>` must be a valid group from the database (e.g., `pecs`, `delts`, `quads`).
+- The `<MUSCLE_GROUP>` must be a valid group from the database (e.g., `pecs`, `delts`, `quads`, `upper_back`, `lower_back`).
+- Multi-word muscle groups must use underscores (e.g., `upper_back` for "upper back", `lower_back` for "lower back").
+- Supports filtering by multiple muscle groups (space-separated or comma-separated).
 - Only **Strength Workouts** that have been tagged with the specified muscle group will be displayed.
 - Run workouts are currently excluded from this filter.
 
-Example:
-- `filter delts`
+Examples:
+- `filter delts` — Shows workouts targeting delts
+- `filter upper_back` — Shows workouts targeting upper back
+- `filter pecs triceps` — Shows workouts targeting either pecs or triceps
+- `filter quads, hamstring, glutes` — Shows workouts targeting any of these muscle groups
 
 Sample output when matches exist:
-`Workouts matching category [delts]:`
-`1. Overhead Press (Date: 2026-04-03) (40.0kg, 3 sets of 8 reps)`
+`Workouts matching category [upper back]:`
+`1. Deadlift (Date: 2026-04-03) (100.0kg, 3 sets of 5 reps)`
 
 Sample output when no matches exist:
 `No workouts found.`
@@ -357,9 +367,9 @@ Invalid input example:
 `filter`
 
 Expected error:
-`Please specify a muscle group. Usage: filter <muscle_group>`
+`Please specify a muscle group. Usage: filter <muscle_group> [<muscle_group2> ...]`
 
-> Tip: Use `view-muscle-groups` to see the full list of available categories you can use with this command.
+> Tip: Use `view-muscle-groups` to see the full list of available categories you can use with this command. Multi-word groups like "upper back" should be typed as `upper_back` with an underscore.
 
 ---
 
@@ -780,7 +790,7 @@ Output:
 | **Untag Muscle**           | `untag-muscle <ID> <muscle>`                     | `untag-muscle 1 quads`              |
 | **Train Muscles**          | `train <muscle>`                                 | `train glutes`                      |
 | **History**                | `history [NUMBER]`                               | `history 5`                         |
-| **Filter Workout**         | `filter <MUSCLE_GROUP>`                          | `filter delts`                      |
+| **Filter Workout**         | `filter <MUSCLE_GROUP> [<MUSCLE_GROUP2> ...]`  | `filter upper_back`                 |
 | **Delete Workout**         | `delete <index>`                                 | `delete 2`                          |
 | **Search by Date**         | `search-date <YYYY-MM-DD>`                       | `search-date 2026-03-15`            |
 | **View Calendar**          | `view-calendar <YYYY-MM>`                        | `view-calendar 2026-04`             |

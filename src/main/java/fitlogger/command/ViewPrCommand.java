@@ -13,7 +13,8 @@ import fitlogger.workoutlist.WorkoutList;
  *
  * <p>For {@link StrengthWorkout} entries, the PR is the entry with the highest
  * recorded weight. For {@link RunWorkout} entries, the PR is the entry with the
- * longest distance. The entire {@link WorkoutList} is scanned to find the maximum.
+ * shortest recorded duration (fastest time), reflecting the standard running
+ * definition of a personal record.
  */
 public class ViewPrCommand extends Command {
 
@@ -31,8 +32,13 @@ public class ViewPrCommand extends Command {
 
     /**
      * Scans the entire workout list for entries matching the target exercise ID,
-     * finds the one with the highest weight (for strength) or longest distance
-     * (for runs), and displays it via the UI.
+     * finds the PR entry, and displays it via the UI.
+     *
+     * <p>PR definition:
+     * <ul>
+     *   <li>Strength: entry with the highest weight.</li>
+     *   <li>Run: entry with the shortest duration (fastest time).</li>
+     * </ul>
      *
      * @param storage  Unused by this command.
      * @param workouts The workout list to search through.
@@ -50,7 +56,8 @@ public class ViewPrCommand extends Command {
         }
 
         Workout prWorkout = null;
-        double maxValue = Double.NEGATIVE_INFINITY;
+        double maxWeight = Double.NEGATIVE_INFINITY;
+        double minDuration = Double.POSITIVE_INFINITY;
 
         for (int i = 0; i < workouts.getSize(); i++) {
             Workout workout = workouts.getWorkoutAtIndex(i);
@@ -61,14 +68,14 @@ public class ViewPrCommand extends Command {
 
             if (workout instanceof StrengthWorkout) {
                 double weight = ((StrengthWorkout) workout).getWeight();
-                if (weight > maxValue) {
-                    maxValue = weight;
+                if (weight > maxWeight) {
+                    maxWeight = weight;
                     prWorkout = workout;
                 }
             } else if (workout instanceof RunWorkout) {
-                double distance = ((RunWorkout) workout).getDistance();
-                if (distance > maxValue) {
-                    maxValue = distance;
+                double duration = ((RunWorkout) workout).getDurationMinutes();
+                if (duration < minDuration) {
+                    minDuration = duration;
                     prWorkout = workout;
                 }
             }

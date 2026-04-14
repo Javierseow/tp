@@ -38,8 +38,10 @@ public class AddWorkoutCommand extends Command {
             return;
         }
 
+        ui.showLine();
         ui.showMessage("Got it. I've added this workout:");
         ui.printWorkout(workoutToAdd);
         ui.showMessage("Now you have " + workouts.getSize() + " workouts in the list.");
+        ui.showLine();
     }
 }

@@ -1246,6 +1246,23 @@ This results in $O(1)$ lookup time and a significantly smaller memory footprint,
 
 Note that multi-word muscle groups (e.g. `upper back`) are supported by normalising spaces to underscores before enum lookup, so the user does not need to type `UPPER_BACK` themselves.
 
+**`FilterTypeCommand.execute(...)`** and its parser
+
+`FilterTypeCommand` allows users to filter their workout history by one or more muscle groups. Unlike `train` which searches a predetermined muscle group, `filter` takes user-specified categories and matches them against workout muscle groups:
+
+1. `parseCategories(String input)` parses comma-separated and space-separated muscle group names.
+2. Multi-word muscle groups (e.g. `upper_back`, `lower_back`) are supported by converting underscores to spaces, which matches the enum's `displayName()` output format.
+3. The parsed categories are stored in a `Set<String>` with lowercase display names (spaces, not underscores).
+4. During execution, for each workout, the command retrieves its muscle groups and checks if any match the target categories using case-insensitive comparison.
+5. Matching workouts are collected and displayed to the user.
+
+**Parsing format supported by `parseCategories(String)`:**
+- Single muscle groups: `filter pecs` or `filter delts`
+- Multi-word muscle groups with underscore: `filter upper_back` (converted to "upper back")
+- Multiple groups separated by spaces: `filter pecs triceps`
+- Multiple groups separated by commas: `filter quads,hamstring,glutes`
+- Mixed formats: `filter pecs, upper_back triceps`
+
 ---
 
 #### Persistence of muscle group tags
@@ -1411,13 +1428,16 @@ FitLogger provides a blazingly fast, distraction-free environment to log mixed-m
 ## User Stories
 
 |Version| As a ... | I want to ... | So that I can ...|
-|--------|----------|---------------|------------------|
-|v1.0|new user|see usage instructions|refer to them when I forget how to use the application|
-|v1.0|user|delete an unwanted workout by index|remove duplicate or accidental entries from my history|
-|v1.0|user|exit the application safely|save my workouts before the program closes|
-|v2.0|user|edit a wrongly entered workout field|correct logging mistakes without deleting and recreating the workout|
-|v2.0|user|search workouts by date|review what I trained on a specific day|
-|v2.0|user|receive clear errors for malformed commands|understand what went wrong and how to correct my input|
+|----|----------|---------------|------------------|
+|v1.0| new user |see usage instructions|refer to them when I forget how to use the application|
+|v1.0| user     |delete an unwanted workout by index|remove duplicate or accidental entries from my history|
+|v1.0| user     |exit the application safely|save my workouts before the program closes|
+|v1.0| user     |save my data to a local file|my logs persist after I close the application|
+|v2.0| user     |edit a wrongly entered workout field|correct logging mistakes without deleting and recreating the workout|
+|v2.0| user     |search workouts by date|review what I trained on a specific day|
+|v2.0| user     |receive clear errors for malformed commands|understand what went wrong and how to correct my input|
+|v2.0| user     |search for last lift stats for an activity|I know what weight and reps to aim for in the current session to ensure progressive training|
+|v2.0| user     |see my best efforts|I can track my training progress|
 
 ## Non-Functional Requirements
 
@@ -1428,7 +1448,36 @@ FitLogger provides a blazingly fast, distraction-free environment to log mixed-m
 
 ## Glossary
 
-* *glossary item* - Definition
+* **Command** - A user instruction entered into the CLI, such as `edit 1 distance/5`,
+`delete 2`, `search-date 2026-03-15`, or `exit`.
+* **Workout** - A logged exercise entry. In FitLogger, a workout is either a run workout
+or a strength workout.
+* **Run workout** - A workout that records a run name, date, distance in kilometres, and
+duration in minutes.
+* **Strength workout** - A workout that records a lift name, date, weight in kilograms,
+number of sets, and number of repetitions.
+* **Workout index** - The one-based number shown beside each workout in `history`.
+Users use this number when editing or deleting workouts.
+* **One-based index** - An index that starts from `1` for the first item shown to the user.
+FitLogger uses one-based indexes in user commands.
+* **Zero-based index** - An index that starts from `0`. FitLogger converts user-facing
+one-based indexes into zero-based indexes internally when accessing `WorkoutList`.
+* **Shortcut ID** - A positive integer that represents a run or lift in the exercise
+dictionary. For example, a user can enter a shortcut ID instead of typing the full
+exercise name.
+* **Exercise dictionary** - The shared database of known run and lift names, including
+default entries and user-added shortcuts.
+* **Workout name** - The user-facing name of a workout. Internally, this is stored in the
+`description` field of `Workout`, but the User Guide and edit command call it `name`.
+* **Reserved storage character** - A character that has special meaning in
+`data/fitlogger.txt`. FitLogger rejects `|` and `/` in workout names to prevent corrupted
+save-file entries.
+* **Plain decimal notation** - A normal decimal number such as `80`, `80.5`, or `5.0`.
+FitLogger rejects scientific notation, `NaN`, and `Infinity` for workout decimal fields.
+* **Save file** - The local `data/fitlogger.txt` file used to store workouts, profile data,
+and custom shortcuts between app sessions.
+* **Command-level log** - Diagnostic information written through Java's `Logger` API to
+`logs/fitlogger.log`, rather than printed as normal CLI output.
 
 ## Instructions for manual testing
 
@@ -1549,6 +1598,84 @@ Start with a clean or disposable save file when testing destructive commands suc
 3. Restart FitLogger.
    - Expected: previously saved workouts are loaded again, confirming that exit saved successfully.
 
+### Testing `lastlift`
+
+1. Add two lifts of the same exercise.
+    - Command: `add-lift Bench Press w/80 s/3 r/8`
+    - Command: `add-lift Bench Press w/90 s/4 r/6`
+    - Expected: Both are added successfully.
+
+2. Retrieve the most recent lift.
+    - Command: `lastlift Bench Press`
+    - Expected: Displays the **second** entry (90.0kg, 4 sets, 6 reps), not the first.
+
+3. Test case-insensitivity.
+    - Command: `lastlift bench press`
+    - Expected: Same result as above.
+
+4. Test with no matching exercise.
+    - Command: `lastlift Squat`
+    - Expected: `No record found for exercise: Squat`
+
+5. Test blank input.
+    - Command: `lastlift`
+    - Expected: `Please specify an exercise name. Usage: lastlift <EXERCISE_NAME>`
+
+6. Confirm run workouts are ignored.
+    - Command: `add-run Bench Press d/5 t/30`
+    - Command: `lastlift Bench Press`
+    - Expected: Still shows the most recent **lift** entry, not the run.
+
+---
+
+### Testing `pr`
+
+1. Add multiple lifts of the same exercise with different weights.
+    - Command: `add-lift Deadlift w/100 s/3 r/5`
+    - Command: `add-lift Deadlift w/150 s/1 r/5`
+    - Command: `add-lift Deadlift w/120 s/3 r/5`
+
+2. Retrieve the personal record.
+    - Command: `pr Deadlift`
+    - Expected: Displays the **second** entry (150.0kg) — the highest weight, not the most recent.
+
+3. Test with run workouts.
+    - Command: `add-run Easy Run d/5 t/30`
+    - Command: `add-run Easy Run d/5 t/20`
+    - Command: `pr Easy Run`
+    - Expected: Displays the entry with **shortest duration** (20.0 mins) — the fastest time.
+
+4. Test with no matching exercise.
+    - Command: `pr Pull-up`
+    - Expected: `No record found for exercise: Pull-up`
+
+5. Test blank input.
+    - Command: `pr`
+    - Expected: `Please specify an exercise name. Usage: pr <EXERCISE_NAME>`
+
+---
+
+### Testing `save` and `load` (Storage)
+
+1. Add some workouts and exit cleanly.
+    - Command: `add-lift Squat w/100 s/5 r/5`
+    - Command: `add-run Easy Run d/5 t/30`
+    - Command: `exit`
+    - Expected: `Workouts saved.` followed by `Goodbye! See you at your next workout!`
+
+2. Restart FitLogger.
+    - Command: `history`
+    - Expected: Both workouts from the previous session are restored correctly.
+
+3. Test corrupted save file handling.
+    - Open `data/fitlogger.txt` manually and add a line like `CORRUPTED | bad data`.
+    - Restart FitLogger.
+    - Expected: A warning is printed for the corrupted line but all valid workouts still load correctly.
+
+4. Test first run (no save file).
+    - Delete `data/fitlogger.txt`.
+    - Restart FitLogger.
+    - Expected: FitLogger starts with an empty workout list and no error is shown.
 
 #### Profile Management
 

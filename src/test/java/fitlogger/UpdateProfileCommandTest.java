@@ -78,7 +78,11 @@ public class UpdateProfileCommandTest {
         assertNull(profile.getName());
         assertEquals(-1, profile.getHeight(), 0.001);
         assertEquals(-1, profile.getWeight(), 0.001);
-        assertTrue(ui.getOutputs().isEmpty());
+        // Two separator lines are shown (before and after), even when no fields are provided
+        List<String> outputs = ui.getOutputs();
+        assertEquals(2, outputs.size());
+        assertTrue(outputs.get(0).equals("---line---"));
+        assertTrue(outputs.get(1).equals("---line---"));
     }
 
     @Test
@@ -111,10 +115,13 @@ public class UpdateProfileCommandTest {
         command.execute(storage, workouts, ui, profile);
 
         List<String> outputs = ui.getOutputs();
-        assertEquals(3, outputs.size());
-        assertTrue(outputs.contains("Name has been updated to Dana"));
-        assertTrue(outputs.contains("Height has been updated to 1.70m"));
-        assertTrue(outputs.contains("Weight has been updated to 60.00kg"));
+        // 5 total outputs: line + 3 messages + line
+        assertEquals(5, outputs.size());
+        assertTrue(outputs.get(0).equals("---line---"));
+        assertTrue(outputs.get(1).contains("Name has been updated to Dana"));
+        assertTrue(outputs.get(2).contains("Height has been updated to 1.70m"));
+        assertTrue(outputs.get(3).contains("Weight has been updated to 60.00kg"));
+        assertTrue(outputs.get(4).equals("---line---"));
     }
 
     @Test
