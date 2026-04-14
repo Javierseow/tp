@@ -1430,7 +1430,36 @@ FitLogger provides a blazingly fast, distraction-free environment to log mixed-m
 
 ## Glossary
 
-* *glossary item* - Definition
+* **Command** - A user instruction entered into the CLI, such as `edit 1 distance/5`,
+`delete 2`, `search-date 2026-03-15`, or `exit`.
+* **Workout** - A logged exercise entry. In FitLogger, a workout is either a run workout
+or a strength workout.
+* **Run workout** - A workout that records a run name, date, distance in kilometres, and
+duration in minutes.
+* **Strength workout** - A workout that records a lift name, date, weight in kilograms,
+number of sets, and number of repetitions.
+* **Workout index** - The one-based number shown beside each workout in `history`.
+Users use this number when editing or deleting workouts.
+* **One-based index** - An index that starts from `1` for the first item shown to the user.
+FitLogger uses one-based indexes in user commands.
+* **Zero-based index** - An index that starts from `0`. FitLogger converts user-facing
+one-based indexes into zero-based indexes internally when accessing `WorkoutList`.
+* **Shortcut ID** - A positive integer that represents a run or lift in the exercise
+dictionary. For example, a user can enter a shortcut ID instead of typing the full
+exercise name.
+* **Exercise dictionary** - The shared database of known run and lift names, including
+default entries and user-added shortcuts.
+* **Workout name** - The user-facing name of a workout. Internally, this is stored in the
+`description` field of `Workout`, but the User Guide and edit command call it `name`.
+* **Reserved storage character** - A character that has special meaning in
+`data/fitlogger.txt`. FitLogger rejects `|` and `/` in workout names to prevent corrupted
+save-file entries.
+* **Plain decimal notation** - A normal decimal number such as `80`, `80.5`, or `5.0`.
+FitLogger rejects scientific notation, `NaN`, and `Infinity` for workout decimal fields.
+* **Save file** - The local `data/fitlogger.txt` file used to store workouts, profile data,
+and custom shortcuts between app sessions.
+* **Command-level log** - Diagnostic information written through Java's `Logger` API to
+`logs/fitlogger.log`, rather than printed as normal CLI output.
 
 ## Instructions for manual testing
 
