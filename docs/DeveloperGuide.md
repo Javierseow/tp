@@ -596,7 +596,7 @@ These commands give users a persistent identity within FitLogger by managing a `
 
 - `UpdateProfileCommand`: Facilitates partial updates, allowing users to modify a single field without affecting others.
 
-- `ClearProfileCommand`: Resets all profile attributes to an "unset" state.
+- `ClearProfileCommand`: Resets all profile attributes to an "unset" state. Ignores all trailing arguments.
 
 
 Command formats:
@@ -717,7 +717,7 @@ The system has four parts:
 - `ExerciseDictionary`: the in-memory data model storing ID-to-name mappings for lifts and runs.
 - `AddShortcutCommand`: lets users extend the database with their own shortcuts at runtime.
 - `DeleteShortcutCommand`: lets users cleanly remove custom shortcuts and their associated metadata.
-- `ViewDatabaseCommand`: lets users see what shortcuts are currently available.
+- `ViewDatabaseCommand`: lets users see available shortcuts. It supports a detailed mode (`view-detailed-database`) which displays exercise entries alongside their associated muscle group tags.
 
 The database ships with four default lift shortcuts and three default run shortcuts. Custom shortcuts added via `add-shortcut` are permanently persisted to the save file alongside the user's profile and workout history.
 
@@ -776,6 +776,12 @@ This snapshot demonstrates how the three internal maps manage their data:
 2. Retrieves the exercise name for the success message.
 3. Calls `dictionary.removeLiftShortcut(id)` or `dictionary.removeRunShortcut(id)` based on `type`.
 4. Displays a confirmation message via `Ui`.
+
+**`ViewDatabaseCommand.execute(...)`** performs:
+
+1. Retrieves the full lift and run maps from `ExerciseDictionary`.
+2. If detailed mode is active, it iterates through the `liftMuscleGroups` map to fetch the `EnumSet` of tags for each ID.
+3. Formats the output via `Ui`, appending the muscle groups in parentheses (e.g., `(Muscles: pecs, delts)`) next to each exercise name.
 
 The sequence diagram below shows this flow for `add-shortcut lift 5 Romanian Deadlift`.
 
@@ -1134,7 +1140,7 @@ Aspect: Calendar Alignment
 
 ---
 
-### Enhancement 14: Muscle Group Tagging System (`ExerciseDictionary` muscle methods, `TagMuscleCommand`, `UntagMuscleCommand`, `LiftMuscleGroupsCommand`, `ViewMuscleGroupCommand`, and `TrainMuscleCommand`)
+### Enhancement 14: Muscle Group Tagging System (`ExerciseDictionary` muscle methods, `TagMuscleCommand`, `UntagMuscleCommand`, `LiftMuscleGroupsCommand`, `ViewMuscleGroupCommand`, `TrainMuscleCommand`)
 
 #### Purpose and user value
 
@@ -1324,6 +1330,7 @@ The `history` command provides a chronological view of all logged workouts. With
 `history [NUMBER]`
 - `[NUMBER]`: Optional positive integer.
 - If omitted, the command displays the entire workout list.
+- Each workout is numbered for use with `edit` and `delete` (i.e. index shown corresponds to index of workout in the list)
 
 
 #### Design overview
