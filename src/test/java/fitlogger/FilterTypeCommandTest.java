@@ -164,6 +164,53 @@ public class FilterTypeCommandTest {
                 ui.messages.stream().anyMatch(m -> m.toLowerCase().contains("no workouts found")));
     }
 
+    @Test
+    void filterMultiWordMuscleGroup_lowerBackWithUnderscore_matchesCorrectly()
+            throws FitLoggerException {
+        FilterTypeCommand command = new FilterTypeCommand("lower_back", dictionary);
+        command.execute(storage, workouts, ui, profile);
+
+        // Should match Deadlift which has LOWER_BACK
+        assertEquals(1, ui.filteredWorkouts.size());
+        assertTrue(ui.filteredWorkouts.get(0).getDescription().equalsIgnoreCase("Deadlift"));
+    }
+
+    @Test
+    void filterMultiWordMuscleGroup_upperBackWithUnderscore_noMatches() throws FitLoggerException {
+        // No workouts with upper_back in test setup
+        FilterTypeCommand command = new FilterTypeCommand("upper_back", dictionary);
+        command.execute(storage, workouts, ui, profile);
+
+        assertEquals(0, ui.filteredWorkouts.size());
+    }
+
+    @Test
+    void filterWithLeadingTrailingSpaces_trimmedCorrectly() throws FitLoggerException {
+        FilterTypeCommand command = new FilterTypeCommand("  quads  glutes  ", dictionary);
+        command.execute(storage, workouts, ui, profile);
+
+        // Should trim and parse as separate groups
+        assertEquals(3, ui.filteredWorkouts.size());
+    }
+
+    @Test
+    void filterWithCommaOnlyNoSpaces_parsesCorrectly() throws FitLoggerException {
+        FilterTypeCommand command = new FilterTypeCommand("quads,glutes,hamstring", dictionary);
+        command.execute(storage, workouts, ui, profile);
+
+        // Should return Squats (2) and Deadlifts (1)
+        assertEquals(3, ui.filteredWorkouts.size());
+    }
+
+    @Test
+    void filterWithMixedUnderscoreAndSpace_multiWordAndSingleWord() throws FitLoggerException {
+        FilterTypeCommand command = new FilterTypeCommand("lower_back quads", dictionary);
+        command.execute(storage, workouts, ui, profile);
+
+        // Should match Deadlift (lower_back) and both Squats (quads)
+        assertEquals(3, ui.filteredWorkouts.size());
+    }
+
     private static class TestUi extends Ui {
         public List<String> messages = new ArrayList<>();
         public List<Workout> filteredWorkouts = new ArrayList<>();

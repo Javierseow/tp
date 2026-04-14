@@ -37,11 +37,13 @@ public class FilterTypeCommand extends Command {
     }
 
     /**
-     * Parses the input string to extract individual muscle group categories. Supports both
-     * space-separated and comma-separated formats.
+     * Parses the input string to extract individual muscle group categories. Supports
+     * space-separated, comma-separated, and underscore-separated (for multi-word groups) formats.
+     * Multi-word muscle groups should use underscores: upper_back, lower_back.
      *
      * @param input The raw input string containing one or more muscle groups.
-     * @return A set of individual muscle group names (lowercased).
+     * @return A set of individual muscle group names (lowercased with spaces instead of
+     *         underscores).
      */
     private static Set<String> parseCategories(String input) {
         Set<String> categories = new HashSet<>();
@@ -49,14 +51,30 @@ public class FilterTypeCommand extends Command {
             return categories;
         }
 
-        // Replace commas with spaces for uniform parsing
-        String normalized = input.replace(",", " ");
+        // First split by comma to handle comma-separated values
+        String[] commaSeparated = input.split(",");
 
-        // Split by whitespace and add non-empty tokens
-        String[] parts = normalized.split("\\s+");
-        for (String part : parts) {
-            if (!part.isBlank()) {
-                categories.add(part.toLowerCase());
+        for (String commaPart : commaSeparated) {
+            if (commaPart.isBlank()) {
+                continue;
+            }
+
+            // Then split each comma-separated part by whitespace
+            // This supports both space-separated and comma-separated formats
+            String[] spaceSeparated = commaPart.trim().split("\\s+");
+
+            for (String part : spaceSeparated) {
+                if (part.isBlank()) {
+                    continue;
+                }
+
+                // Convert underscores to spaces to match displayName() format
+                // This allows "upper_back" to be matched as "upper back"
+                String normalized = part.replace('_', ' ').toLowerCase();
+
+                if (!normalized.isBlank()) {
+                    categories.add(normalized);
+                }
             }
         }
 
@@ -102,7 +120,6 @@ public class FilterTypeCommand extends Command {
         String displayCategories = String.join(", ", targetCategories);
         ui.showMessage("Workouts matching category [" + displayCategories + "]:");
         ui.showWorkoutList(filteredList);
-        ui.showLine();
     }
 
     /**
