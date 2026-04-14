@@ -424,23 +424,6 @@ and constructs a `RunWorkout` object.
 This polymorphic design allows `WorkoutList` to store both types in a single `ArrayList<Workout>`. 
 Domain validation is enforced directly in the setters, keeping invalid state from ever being stored.
 
-The two run-specific fields and their constraints are:
-
-|Input error|Error message shown|
-|---|---|
-|Missing arguments|`Missing arguments for add-run.` + usage hint|
-|Missing flag (e.g. no `t/`)|`Invalid format for add-run.` + usage hint|
-|Flags in wrong order (e.g. `t/` before `d/`)|`Invalid format for add-run.` + usage hint|
-|Non-numeric distance/duration|`Distance and duration must be valid decimal numbers.` + usage hint|
-|Scientific notation distance/duration (e.g. `5e1`)|`Distance and duration must be valid decimal numbers.` + usage hint|
-|Zero or negative distance|`Distance must be a positive number.`|
-|Zero or negative duration|`Duration must be a positive number.`|
-|Non-finite value (`NaN`, `Infinity`)|`Distance and duration must be realistic positive numbers.`|
-|Distance exceeds 1000 km|`Distance cannot exceed 1000.0km.`|
-|Duration exceeds 14400 mins|`Duration cannot exceed 10 days (14400 minutes).`|
-|Extra text after duration value|`Invalid format. No additional text allowed after duration.`|
-|Name contains `\|` or `/`|`Run name must not contain '\|' or '/'`|
-
 ### Sequence of events
 The sequence diagram below shows how a run is logged when the user enters `add-run Jog d/5 t/30`.
 ![AddRunWorkoutSequenceDiagram](images/AddRunWorkoutSequenceDiagram.png)
@@ -481,15 +464,22 @@ reconstructing the workout list on startup.
 
 Validation is split between `Parser.parseAddRun(...)` (format-level) and `RunWorkout` setters (domain-level):
 
-|Input error|Error message shown|
-|---|---|
-|Missing arguments|`Missing arguments for add-run.` + usage hint|
-|Missing flag (e.g. no `d/`)|`Invalid format for add-run.` + usage hint|
-|Non-numeric distance/duration|Parse error with usage hint|
-|Scientific notation distance/duration|Parse error with usage hint|
-|Zero or negative distance|`Distance must be a positive number.`|
-|Zero or negative duration|`Duration must be a positive number.`|
-|Non-finite value (`NaN`, `Infinity`)|Parse error with usage hint|
+| Input error                                        | Error message shown                                                 |
+|----------------------------------------------------|---------------------------------------------------------------------|
+| Missing arguments                                  | `Missing arguments for add-run.` + usage hint                       |
+| Missing flag (e.g. no `t/` or `d/`)                | `Invalid format for add-run.` + usage hint                          |
+| Missing flag (no description)                      | `Workout name cannot be blank.`                         |
+| Flags in wrong order (e.g. `t/` before `d/`)       | `Invalid format for add-run.` + usage hint                          |
+| Non-numeric distance/duration                      | `Distance and duration must be valid decimal numbers.` + usage hint |
+| Scientific notation distance/duration (e.g. `5e1`) | `Distance and duration must be valid decimal numbers.` + usage hint |
+| Zero or negative distance                          | `Distance must be a positive number.`                               |
+| Zero or negative duration                          | `Duration must be a positive number.`                               |
+| Non-finite value (`NaN`, `Infinity`)               | `Distance and duration must be realistic positive numbers.`         |
+| Distance exceeds 1000 km                           | `Distance cannot exceed 1000.0km.`                                  |
+| Duration exceeds 14400 mins                        | `Duration cannot exceed 10 days (14400 minutes).`                   |
+| Extra text after duration value                    | `Invalid format. No additional text allowed after duration.`        |
+| Name contains `\|` or `/`                          | `Run name must not contain '\|' or '/' — these characters are reserved by the storage format.`                            |
+| Non-finite value (`NaN`, `Infinity`)               |Parse error with usage hint|
 
 #### Design considerations
 
@@ -520,8 +510,8 @@ The `view-total-mileage` command provides hybrid athletes with an automated way 
 
 `view-total-mileage [DAYS]`
 
-- `DAYS`: Optional non-negative integer (e.g., `0` for today, `30` for past month).
-
+- `DAYS`: Optional non-negative integer (e.g., `0` for today, `30` for past month). Filters distance to runs within the last X days, excluding the current day (i.e. if `DAYS` = 1, mileage shown will include yesterday and today's runs)
+- Distance is formatted to 2 decimal places to avoid scientific notation.
 - If omitted, calculates all-time mileage.
 
 
