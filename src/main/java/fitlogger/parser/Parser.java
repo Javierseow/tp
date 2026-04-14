@@ -18,6 +18,7 @@ import fitlogger.command.UpdateProfileCommand;
 import fitlogger.command.ViewCalendarCommand;
 import fitlogger.command.ViewDatabaseCommand;
 import fitlogger.command.ViewHistoryCommand;
+import fitlogger.command.ViewLastCardioCommand;
 import fitlogger.command.ViewLastLiftCommand;
 import fitlogger.command.ViewMuscleGroupCommand;
 import fitlogger.command.ViewProfileCommand;
@@ -41,7 +42,7 @@ public class Parser {
     public static final int MAX_INTEGER_INPUT = 1_000_000;
 
     public static Command parse(String fullCommand, WorkoutList workouts,
-            ExerciseDictionary dictionary) throws FitLoggerException {
+                                ExerciseDictionary dictionary) throws FitLoggerException {
         assert fullCommand != null : "Parser.parse was called with a null string!";
         String[] parts = splitInput(fullCommand, " ", 2);
         String commandWord = parts[0].toLowerCase();
@@ -106,7 +107,13 @@ public class Parser {
             return parseDeleteShortcut(arguments, dictionary);
 
         case "lastlift":
-            return new ViewLastLiftCommand(arguments);
+            return new ViewLastLiftCommand(resolveExerciseNameOrId(arguments, workouts, dictionary,
+                    true, false, "lastlift"));
+
+        case "lastcardio":
+        case "lastrun":
+            return new ViewLastCardioCommand(resolveExerciseNameOrId(arguments, workouts, dictionary,
+                    false, true, commandWord));
 
         case "filter":
             return new FilterTypeCommand(arguments, dictionary);
@@ -115,7 +122,8 @@ public class Parser {
             return parseViewCalendar(arguments);
 
         case "pr":
-            return new ViewPrCommand(arguments);
+            return new ViewPrCommand(resolveExerciseNameOrId(arguments, workouts, dictionary,
+                    true, true, "pr"));
 
         default:
             throw new FitLoggerException(
@@ -136,7 +144,7 @@ public class Parser {
      *         characters.
      */
     private static Command parseAddRun(String arguments, WorkoutList workouts,
-            ExerciseDictionary dictionary) throws FitLoggerException {
+                                       ExerciseDictionary dictionary) throws FitLoggerException {
         if (arguments.isBlank()) {
             throw new FitLoggerException("Missing arguments for add-run.\n"
                     + "Usage: add-run <name_or_id> d/<distanceKm> t/<durationMinutes>");
@@ -216,7 +224,7 @@ public class Parser {
      *         characters.
      */
     private static Command parseAddLift(String arguments, WorkoutList workouts,
-            ExerciseDictionary dictionary) throws FitLoggerException {
+                                        ExerciseDictionary dictionary) throws FitLoggerException {
         if (arguments.isBlank()) {
             throw new FitLoggerException("Missing arguments for add-lift.\n"
                     + "Usage: add-lift <name_or_id> w/<weightKg> s/<sets> r/<reps>");
@@ -281,6 +289,78 @@ public class Parser {
 
         Workout strength = new StrengthWorkout(name, weight, sets, reps, LocalDate.now());
         return new AddWorkoutCommand(strength);
+    }
+
+
+    /**
+     * Resolves an exercise argument into a full exercise name.
+     *
+     * <p>If the argument is numeric, it is treated as a shortcut ID. The method supports
+     * lift-only lookup, run-only lookup, or both. When both lift and run shortcuts exist for
+     * the same ID, the existing workout history is used to disambiguate where possible.
+     *
+     * @param argument Raw exercise argument supplied by the user.
+     * @param workouts Existing workout history, used to break lift/run ID ties.
+     * @param dictionary Shortcut dictionary.
+     * @param allowLift Whether lift shortcuts are allowed.
+     * @param allowRun Whether run shortcuts are allowed.
+     * @param commandWord Command name used in error messages.
+     * @return The resolved full exercise name, or the original argument if it is not numeric.
+     * @throws FitLoggerException If the argument is blank, unknown, or ambiguous.
+     */
+    private static String resolveExerciseNameOrId(String argument, WorkoutList workouts,
+                                                  ExerciseDictionary dictionary, boolean allowLift, boolean allowRun,
+                                                  String commandWord) throws FitLoggerException {
+        String trimmedArgument = argument.trim();
+        if (trimmedArgument.isBlank()) {
+            throw new FitLoggerException("Missing arguments.\nUsage: " + commandWord
+                    + " <EXERCISE_NAME_OR_ID>");
+        }
+
+        if (!trimmedArgument.matches("\\d+")) {
+            return trimmedArgument;
+        }
+
+        int shortcutId = parsePositiveIntegerWithinLimit(trimmedArgument, "Shortcut ID");
+        String liftName = allowLift ? dictionary.getLiftName(shortcutId) : null;
+        String runName = allowRun ? dictionary.getRunName(shortcutId) : null;
+
+        if (liftName == null && runName == null) {
+            throw new FitLoggerException("Shortcut ID [" + shortcutId + "] does not exist. "
+                    + "Type 'view-database' to see available shortcuts.");
+        }
+        if (liftName != null && runName == null) {
+            return liftName;
+        }
+        if (liftName == null) {
+            return runName;
+        }
+        if (liftName.equalsIgnoreCase(runName)) {
+            return liftName;
+        }
+
+        boolean hasLiftRecord = hasWorkoutWithDescription(workouts, liftName);
+        boolean hasRunRecord = hasWorkoutWithDescription(workouts, runName);
+
+        if (hasLiftRecord && !hasRunRecord) {
+            return liftName;
+        }
+        if (hasRunRecord && !hasLiftRecord) {
+            return runName;
+        }
+
+        throw new FitLoggerException("Shortcut ID [" + shortcutId + "] is ambiguous. It matches "
+                + "both '" + liftName + "' and '" + runName + "'. Use the full exercise name.");
+    }
+
+    /** Returns whether the workout history contains a workout matching the description. */
+    private static boolean hasWorkoutWithDescription(WorkoutList workouts, String description) {
+        for (int i = 0; i < workouts.getSize(); i++) {
+            if (workouts.getWorkoutAtIndex(i).getDescription().equalsIgnoreCase(description)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private static Command parseAddShortcut(String arguments, ExerciseDictionary dictionary)
@@ -418,7 +498,7 @@ public class Parser {
     }
 
     private static Command parseTagMuscle(String arguments, ExerciseDictionary dictionary,
-            boolean isTag) throws FitLoggerException {
+                                          boolean isTag) throws FitLoggerException {
         String usage = (isTag ? "tag" : "untag") + "-muscle <shortcut-ID> <muscle-group>";
         if (arguments.isBlank()) {
             throw new FitLoggerException("Missing arguments.\nUsage: " + usage);

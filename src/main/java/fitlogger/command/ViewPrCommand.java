@@ -50,7 +50,7 @@ public class ViewPrCommand extends Command {
         }
 
         Workout prWorkout = null;
-        double maxValue = 0.0;
+        double maxValue = Double.NEGATIVE_INFINITY;
 
         for (int i = 0; i < workouts.getSize(); i++) {
             Workout workout = workouts.getWorkoutAtIndex(i);
