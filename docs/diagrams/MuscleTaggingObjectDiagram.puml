@@ -1,0 +1,19 @@
+@startuml
+object "<u>:ExerciseDictionary</u>" as Dictionary {
+}
+
+object "<u>liftMuscleGroups:TreeMap</u>" as Map {
+}
+
+object "<u>set1:EnumSet<MuscleGroup></u>" as Set1 {
+    [QUADS, GLUTES]
+}
+
+object "<u>set2:EnumSet<MuscleGroup></u>" as Set2 {
+    [PECS, TRICEPS]
+}
+
+Dictionary *-- Map
+Map o-- "1" Set1 : key=1
+Map o-- "2" Set2 : key=2
+@enduml

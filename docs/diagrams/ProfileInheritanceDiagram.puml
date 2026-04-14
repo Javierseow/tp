@@ -1,0 +1,44 @@
+@startuml
+skinparam classAttributeIconSize 0
+hide circle
+
+abstract class Command {
+    + {abstract} execute(Storage, WorkoutList, Ui, UserProfile)
+}
+
+abstract class ProfileCommand {
+    + {abstract} execute(Storage, WorkoutList, Ui, UserProfile)
+}
+
+class ViewProfileCommand {
+    + execute(..., UserProfile)
+}
+
+class UpdateProfileCommand {
+    - newName: String
+    - newHeight: double
+    - newWeight: double
+    + UpdateProfileCommand(String, double, double)
+    + execute(..., UserProfile)
+}
+
+class ClearProfileCommand {
+    + execute(..., UserProfile)
+}
+
+class UserProfile {
+    - name: String
+    - height: double
+    - weight: double
+    + setName(String)
+    + setHeight(double)
+    + setWeight(double)
+}
+
+Command <|-- ProfileCommand
+ProfileCommand <|-- ViewProfileCommand
+ProfileCommand <|-- UpdateProfileCommand
+ProfileCommand <|-- ClearProfileCommand
+
+ProfileCommand .down.> UserProfile : interacts with >
+@enduml

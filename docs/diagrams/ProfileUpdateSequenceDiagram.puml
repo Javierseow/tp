@@ -1,0 +1,28 @@
+@startuml
+participant ":FitLogger" as Main
+participant ":Parser" as Parser
+participant "u:UpdateProfileCommand" as Update
+participant "p:UserProfile" as Profile
+
+Main -> Parser : parse("profile set height 1.75")
+activate Parser
+create Update
+Parser -> Update : new UpdateProfileCommand(null, 1.75, -1.0)
+activate Update
+Update --> Parser
+deactivate Update
+Parser --> Main : u
+deactivate Parser
+
+Main -> Update : execute(..., p)
+activate Update
+Note over Update : newName is null, skip
+Update -> Profile : setHeight(1.75)
+activate Profile
+Profile --> Update
+deactivate Profile
+Update -> ":Ui" : showMessage("Height has been updated...")
+Note over Update : newWeight is -1.0, skip
+Update --> Main
+deactivate Update
+@enduml

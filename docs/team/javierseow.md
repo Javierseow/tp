@@ -4,8 +4,6 @@
 
 FitLogger is a command-line fitness tracking application for hybrid athletes who prefer fast keyboard-driven logging of both strength and running workouts.
 
-My main focus was building the project skeleton, implementing the core list to store all the workouts, the run workout workflow, and developing the profile system that lets users customize their profile.
-
 ## Summary of Contributions
 
 ### Code Contributed
@@ -19,16 +17,24 @@ My main focus was building the project skeleton, implementing the core list to s
 - Implemented the `add-run` command and `RunWorkout` class, including input validation for distance and duration and flag order enforcement (`d/` before `t/`).
 - Implemented `view-total-mileage` (`ViewShoeMileageCommand`), aggregating distance across all logged run workouts.
 - Implemented `history` (`ViewHistoryCommand`), displaying all logged workouts in order with numbered indices.
-- Implemented `profile view` and `profile set` (`ViewProfileCommand`, `UpdateProfileCommand`), allowing users to store and update their name, height, and weight with bounds validation.
+- Implemented `profile view`, `profile set` and `profile clear` (`ViewProfileCommand`, `UpdateProfileCommand`, `ClearProfileCommand`), allowing users to store, update and clear their name, height, and weight with bounds validation.
+- Implemented `view-detailed-database` (under `ViewDatabaseCommand`), displaying shortcuts together with their respective muscle groups trained.
+- Implemented `tag-muscle`, `untag-muscle` (`TagMuscleCommand`, `UntagMuscleCommand`) to allow tagging and untagging of muscles to various lift exercises.
+- Implemented `train` (`TrainMuscleCommand`) to view which exercises a user can do to train a certain muscle
+- Implemented `view-muscle-groups` (`ViewMuscleGroupCommand`) to show all the possible muscle groups that can be targetted and trained.
+- Implemented `muscle-groups` (`LiftMuscleGroupsCommand`) to show all the muscle groups that a specific exercise targets.
+- Implemented all relevant functions for the above in storage and parser to ensure correct implementation and flow.
 
 ### Contributions to User Guide
 
 - Wrote sections for:
     - `add-run`
-    - `profile view`
-    - `profile set`
+    - `profile view`, `profile set`, `profile clear`
     - `view-total-mileage`
     - `history`
+    - `view-detailed-database`
+    - `muscle-groups`, `view-muscle-groups`, `train`
+    - `tag-muscle`, `untag-muscle`
 
 ### Contributions to Developer Guide
 
@@ -36,6 +42,8 @@ My main focus was building the project skeleton, implementing the core list to s
   - `add-run` command and `RunWorkout` class (Enhancement 4)
   - `view-total-mileage` command (Enhancement 5)
   - `profile view` and `profile set` commands (Enhancement 6)
+  - muscle commands (Enhancement 14)
+  - `history` command (Enhancement 15)
 - Contributed UML diagrams: `ProfileCommandDiagram`.
 
 ### Contributions to Team-Based Tasks

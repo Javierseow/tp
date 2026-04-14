@@ -1,0 +1,17 @@
+@startuml
+skinparam classAttributeIconSize 0
+hide circle
+
+abstract class Command {
+    + {abstract} execute(...)
+}
+
+abstract class ProfileCommand {
+    + {abstract} execute(...)
+}
+
+Command <|-- ProfileCommand
+ProfileCommand <|-- ViewProfileCommand
+ProfileCommand <|-- UpdateProfileCommand
+ProfileCommand <|-- ClearProfileCommand
+@enduml

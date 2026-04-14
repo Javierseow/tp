@@ -1,0 +1,26 @@
+@startuml
+skinparam classAttributeIconSize 0
+hide circle
+
+abstract class Workout {
+    # description: String
+    # date: LocalDate
+    + Workout(description: String, date: LocalDate)
+    + {abstract} toFileFormat(): String
+    + getDescription(): String
+    + getDate(): LocalDate
+}
+
+class RunWorkout {
+    - {static} MAX_DISTANCE_KM: double = 1000.0
+    - {static} MAX_DURATION_MINS: double = 14400.0
+    # distance: double
+    # durationMinutes: double
+    + RunWorkout(desc: String, date: LocalDate, dist: double, dur: double)
+    + setDistance(dist: double)
+    + setDurationMinutes(dur: double)
+    + toFileFormat(): String
+}
+
+Workout <|-- RunWorkout
+@enduml

@@ -1,0 +1,35 @@
+@startuml
+participant ":Parser" as Parser
+participant ":RunWorkout" as RunWorkout
+participant ":AddWorkoutCommand" as AddWorkoutCommand
+
+[-> Parser : parseAddRun("Jog d/5 t/30")
+activate Parser
+
+Parser -> Parser : splitInput()
+Parser -> Parser : validateNoStorageDelimiters()
+
+create RunWorkout
+Parser -> RunWorkout : new RunWorkout("Jog", now, 5.0, 30.0)
+activate RunWorkout
+
+RunWorkout -> RunWorkout : setDistance(5.0)
+activate RunWorkout
+deactivate RunWorkout
+
+RunWorkout -> RunWorkout : setDurationMinutes(30.0)
+activate RunWorkout
+deactivate RunWorkout
+
+RunWorkout --> Parser : runInstance
+deactivate RunWorkout
+
+create AddWorkoutCommand
+Parser -> AddWorkoutCommand : new AddWorkoutCommand(runInstance)
+activate AddWorkoutCommand
+AddWorkoutCommand --> Parser : commandInstance
+deactivate AddWorkoutCommand
+
+[<-- Parser : commandInstance
+deactivate Parser
+@enduml

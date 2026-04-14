@@ -418,6 +418,7 @@ and constructs a `RunWorkout` object.
 4. `AddWorkoutCommand.execute(...)` adds the workout to `WorkoutList` and confirms via `Ui`.
 
 #### Class-level design
+[See Diagram](#class-level-design)
 
 `RunWorkout` extends the same abstract `Workout` base class as `StrengthWorkout`. 
 This polymorphic design allows `WorkoutList` to store both types in a single `ArrayList<Workout>`. 
@@ -429,6 +430,27 @@ The two run-specific fields and their constraints are:
 |---|---|---|
 |`distance`|`double`|Must be finite and > 0|
 |`durationMinutes`|`double`|Must be finite and > 0|
+
+### Sequence of events
+The sequence diagram below shows how a run is logged when the user enters `add-run Jog d/5 t/30`.
+![AddRunWorkoutSequenceDiagram](images/AddRunWorkoutSequenceDiagram.png)
+The `RunWorkout` object is created inline during parsing and passed directly into `AddWorkoutCommand`. 
+The command does not store a reference to `Parser` or `Storage` — it receives `storage` and `workouts` only at 
+execution time via `execute(...)`, keeping the command stateless until it runs.
+
+#### Component-level behavior
+
+The interaction between the `Parser` and the `RunWorkout` constructor is designed to be **fail-fast**. If the user provides a future date (during storage loading) or invalid metrics, a `FitLoggerException` is thrown immediately, preventing an invalid object from ever existing in the `WorkoutList`.
+
+**Sequence of validation:**
+
+1. **Tokenization:** `Parser` identifies the `d/` and `t/` flags.
+
+2. **Format Validation:** `Parser` checks that the strings match a plain-decimal regex (rejecting `8e1`).
+
+3. **Instance Creation:** The `RunWorkout` constructor is invoked.
+
+4. **Domain Validation:** The constructor calls internal setters; if any field violates a constraint, construction fails.
 
 #### Storage format
 
@@ -484,165 +506,206 @@ regardless of how it is constructed.
 
 #### Purpose and user value
 
-`ViewShoeMileageCommand` lets users see their total running distance across all logged run workouts, 
-along with a count of how many runs they have completed. This gives runners a quick summary of their 
-accumulated shoe mileage — a common metric for knowing when to replace running shoes.
+The `view-total-mileage` command provides hybrid athletes with an automated way to track equipment wear. By aggregating distance data from the `WorkoutList`, users can monitor "shoe mileage" to prevent injury and plan gear replacements. The command supports optional time-windowing to allow for "all-time," "today-only," or "past-X-days" analysis.
 
-Command format:
+#### Command format
+
+`view-total-mileage [DAYS]`
+
+- `DAYS`: Optional non-negative integer (e.g., `0` for today, `30` for past month).
+
+- If omitted, calculates all-time mileage.
+
+
+**Sample Output:**
 
 ```
-view-total-mileage
-```
-
-Example output:
-
-```
-Your total distance ran is 45.30km across 7 runs.
+Total shoe mileage (past 7 day(s)): 15.50km across 3 run(s).
 ```
 
 #### Design overview
 
-This command follows FitLogger's standard command pipeline. It holds no user-supplied state 
-and requires no arguments — it is a pure read operation over `WorkoutList`.
+The command follows the standard **Command Pattern**. It is instantiated by the `Parser` with a `daysLimit` state and executed polymorphically. It utilizes **Polymorphic Filtering** via `instanceof` to isolate `RunWorkout` data from the mixed-type `WorkoutList`.
 
-1. `Parser.parse(...)` identifies the `view-total-mileage` keyword and returns a `ViewShoeMileageCommand`.
-2. The main loop calls `execute(storage, workouts, ui)`.
-3. The command iterates over all workouts, filters for `RunWorkout` instances, and accumulates the total distance.
-4. The result is displayed via `Ui`.
+#### UML diagrams
+
+**Sequence Diagram: Execution and Filtering**
+
+The following diagram illustrates how the command interacts with the `WorkoutList` and the `RunWorkout` objects to aggregate data.
+
+![iewShoeMileageSequenceDiagram](images/ViewShoeMileageSequenceDiagram.png)
 
 #### Component-level behavior
 
 `ViewShoeMileageCommand.execute(...)` performs the following steps:
 
-1. Initialise `totalMileage = 0.0` and `runWorkoutCount = 0`.
-2. Retrieve all workouts from `WorkoutList` via `getWorkouts()`.
-3. For each workout, check if it is an instance of `RunWorkout` using a pattern-matching `instanceof`.
-4. If so, assert that `distance >= 0` (a defensive sanity check), then accumulate distance and increment the count.
-5. Display the formatted result via `ui.showMessage(...)`.
+1. **Window Calculation**: Determines the `cutoffDate` (Today - `daysLimit`). If `daysLimit` is `-1`, the windowing logic is disabled.
 
-The command is deliberately read-only: it does not modify `WorkoutList`, `Storage`, or `UserProfile`.
+2. **Aggregation**: Iterates through the `WorkoutList`. For every element:
+
+    - It checks if the object is a `RunWorkout`.
+
+    - It verifies the date is within the window (e.g., if `daysLimit` is `0`, only today's runs are counted).
+
+    - It increments `totalMileage` and `numberOfRuns`.
+
+3. **UI Feedback**: Dispatches the result to `Ui`.
+
+    - Uses a specialized string for the `daysLimit == 0` case (Today).
+
+    - Uses `String.format("%.2f", totalMileage)` to ensure decimal consistency.
+
+
+#### Error handling
+
+|**Input Scenario**|**Resulting Behavior**|
+|---|---|
+|Negative integer (e.g., `-5`)|`Parser` throws `FitLoggerException`: "Number of days must be a non-negative integer."|
+|Non-numeric input (e.g., `abc`)|`Parser` throws `FitLoggerException` with usage hint.|
+|Overlarge input (> 1,000,000)|`Parser` catches `NumberFormatException` and throws `FitLoggerException`.|
+|No runs in list|Command succeeds and returns `0.00km across 0 run(s)`.|
 
 #### Design considerations
 
-**Alternative 1 (current choice): Filter by `instanceof` in the command**
+**Aspect: Filtering Implementation**
 
-- Pros: Simple and self-contained. No changes needed to `WorkoutList` or `Workout`. 
-Easily extended to show per-workout breakdowns in the future.
-- Cons: The command is aware of a concrete subtype (`RunWorkout`), which is a mild coupling to the class hierarchy.
+- **Current Choice: Filtering via `instanceof` in Command.**
 
-**Alternative 2: Add a `getTotalRunDistance()` method to `WorkoutList`**
+    - **Pros:** Keeps `WorkoutList` clean and type-agnostic. This makes the system easily extendable for other mileage types (e.g., cycling) without modifying the core data structure.
 
-- Pros: Encapsulates the filtering logic inside `WorkoutList`, making the command even simpler.
-- Cons: Adds a run-specific method to `WorkoutList`, which should ideally remain type-agnostic. 
-As more workout types are added, this approach leads to a proliferation of 
-type-specific query methods on `WorkoutList`.
+    - **Cons:** Coupling between the Command and `RunWorkout`.
 
-The current approach was chosen to keep `WorkoutList` general-purpose while accepting the 
-minor coupling in the command itself.
+- **Alternative: Type-specific sub-lists.**
+
+    - **Reason for Rejection:** Maintaining separate lists for runs and lifts would double the `Storage` and `Parser` complexity. A single list with polymorphic filtering is more robust for a v2.1 CLI application.
+
+
+**Aspect: Floating Point Representation**
+
+- **Decision:** Distance is stored as a `double` but displayed as a formatted `String`.
+
+- **Rationale:** Prevents the "Scientific Notation" bug. It ensures that $0.0001$ km doesn't display as $1.0E-4$, which would break the "non-technical" user experience.
 
 ---
 
-### Enhancement 6: `ViewProfileCommand` and `UpdateProfileCommand`
+### Enhancement 6: `ViewProfileCommand`, `UpdateProfileCommand`, and `ClearProfileCommand`
 
 #### Purpose and user value
 
-These two commands give users a persistent identity within FitLogger by managing a `UserProfile` 
-that stores their name, height, and weight.
+These commands give users a persistent identity within FitLogger by managing a `UserProfile` that stores their name, height, and weight.
 
-- `ViewProfileCommand` displays the current profile, with friendly placeholder text for any fields not yet set.
-- `UpdateProfileCommand` allows users to update a profile field in a single command.
+- `ViewProfileCommand`: Displays the current profile with formatted placeholders for unset fields.
+
+- `UpdateProfileCommand`: Facilitates partial updates, allowing users to modify a single field without affecting others.
+
+- `ClearProfileCommand`: Resets all profile attributes to an "unset" state.
+
 
 Command formats:
 
 ```
 profile view
-profile set name <name>
-profile set height <meters>
-profile set weight <kg>
+profile clear
+profile set name <value>
+profile set height <value>
+profile set weight <value>
 ```
 
 #### Design overview
 
-Both commands extend `ProfileCommand`, which itself extends the abstract `Command` base class. 
-This intermediate layer groups profile-related commands without adding any behaviour — 
-it serves as a marker for future extensibility (for example, a `DeleteProfileCommand`).
+The profile system utilizes a tiered inheritance model to categorize actions under a common parent, `ProfileCommand`, which extends the base `Command` class. This allows the application to handle all profile-related interactions through a unified execution interface.
 
-The execution flow is:
+The execution flow follows these steps:
 
-1. `Parser.parse(...)` identifies the `profile` keyword and routes to sub-parsers for `view` or `set`.
-2. For `profile view`, a `ViewProfileCommand` is returned with no arguments.
-3. For `profile set`, `Parser` extracts whichever fields are present and constructs an `UpdateProfileCommand` 
-with the parsed values. Fields not present in the input are passed as `null` (name) or `-1` (height/weight)
-to signal "no change".
-4. The main loop calls `execute(storage, workouts, ui, profile)` polymorphically.
+1. `Parser.parse(...)` identifies the `profile` keyword and routes to sub-parsers.
+
+2. For `profile set`, the `Parser` identifies the target field and provides the new value. Fields not provided are passed as sentinel values—`null` for strings and `-1.0` for numbers—to the `UpdateProfileCommand` constructor.
+
+3. The returned command is executed polymorphically by the main loop.
+
 
 #### Class-level design
 
-The class diagram below shows the inheritance structure underpinning this feature.
+The following class diagram shows the inheritance structure. By using `ProfileCommand` as an abstract bridge, we keep the main execution loop decoupled from the specific logic of viewing, clearing, or updating.
+![ProfileInheritanceDiagram](images/ProfileInheritanceDiagram.png)
 
-![Profile Command Diagram](images/ProfileCommandDiagram.png)
+#### Sequence of events
 
-Both `ViewProfileCommand` and `UpdateProfileCommand` inherit from the abstract `ProfileCommand`, 
-which in turn extends the base `Command` class. This tiered inheritance allows the application to 
-categorize profile-specific actions under a common parent.
+The sequence diagram below illustrates a partial update where a user executes `profile set height 1.75`. It highlights the **Selective Invocation** logic where the command determines which `UserProfile` setters to trigger based on the presence of sentinel values.
+![ProfileUpdateSequenceDiagram](images/ProfileUpdateSequenceDiagram.png)
+As shown in the diagram, the sequence within `UpdateProfileCommand#execute()` is as follows:
 
-The `UserProfile` class acts as the data store for the user's physical attributes. 
-During execution, the `ProfileCommand` interacts directly with the `UserProfile` object passed 
-into its `execute` method. This design ensures that profile data is decoupled from the workout list, 
-maintaining a clean separation of concerns within the application state.
+1. **Name Check**: The command evaluates `newName`. Since it is `null` (sentinel), the `setName` call is skipped.
+
+2. **Height Update**: The command identifies `newHeight` as a valid update ($1.75$) and invokes `profile.setHeight(1.75)`.
+
+3. **UI Feedback**: Immediately after the update, `ui.showMessage(...)` is called to confirm the specific change to the user.
+
+4. **Weight Skip**: The command identifies `newWeight` as `-1.0` (sentinel) and skips the `setWeight` call, preserving existing data.
+
 
 #### Component-level behavior
 
 **`ViewProfileCommand.execute(...)`**
 
-1. Call `ui.showLine()` to open the display block.
-2. Display name — if `profile.getName()` is `null`, show `"name not set yet"`.
-3. Display height — if `profile.getHeight()` is `-1`, show `"height not set yet"`; 
-otherwise format to 2 decimal places with the `m` suffix.
-4. Display weight — if `profile.getWeight()` is `-1`, show `"weight not set yet"`; 
-5. otherwise format to 2 decimal places with the `kg` suffix.
-Call `ui.showLine()` to close the display block.
+1. It opens a display block via the UI.
+
+2. It performs a **Display Sentinel Check**:
+
+    - If `getName()` is `null`, it displays "name not set yet".
+
+    - If `getHeight()` or `getWeight()` is `-1.0`, it displays "height/weight not set yet".
+
+3. Valid numerical values are formatted to 2 decimal places with their respective units (`m` or `kg`).
+
 
 **`UpdateProfileCommand.execute(...)`**
 
-1. If `newName != null`, call `profile.setName(newName)` and confirm via `Ui`.
-2. If `newHeight != -1`, call `profile.setHeight(newHeight)` and confirm via `Ui`.
-3. If `newWeight != -1`, call `profile.setWeight(newWeight)` and confirm via `Ui`.
+1. If `newName != null`, it updates the name and sends a confirmation to the UI.
 
-Only fields explicitly supplied by the user are updated. Fields passed as sentinel values 
-(`null` / `-1`) are silently skipped, preserving existing profile data.
+2. If `newHeight != -1.0`, it updates the height and sends a confirmation to the UI.
+
+3. If `newWeight != -1.0`, it updates the weight and sends a confirmation to the UI.
+
+
+**`ClearProfileCommand.execute(...)`**
+
+1. It resets the `UserProfile` by passing `null`, `-1.0`, and `-1.0` to the respective setters.
+
+2. It notifies the user that the profile has been successfully cleared.
+
 
 #### Sentinel value design decision
 
-`-1` is used as a sentinel for unset numeric profile fields (height and weight) because:
+`-1.0` is used as a numeric sentinel because it is outside the valid physical domain for height and weight. This allows the system to clearly distinguish between a "reset" or "no-change" state and an actual measurement of `0`.
 
-- It is outside any valid physical range, so it cannot be confused with a real value.
-- The same sentinel is used consistently in both `UserProfile` storage and `UpdateProfileCommand` 
-argument passing, keeping the contract clear.
+The `UpdateProfileCommand` constructor enforces this boundary via assertions:
 
-An assertion in `UpdateProfileCommand`'s constructor enforces this:
+Java
 
-``` java
+```
 assert newHeight == -1 || newHeight >= 0 : "Height is invalid";
 assert newWeight == -1 || newWeight >= 0 : "Weight is invalid";
 ```
 
+#### Validation and error handling
+
+|**Input error**|**Error message shown**|
+|---|---|
+|Height outside $[0.3, 3.0]$|`Your Height/Weight is unrealistically low/high.`|
+|Weight outside $[10, 500]$|`Your Height/Weight is unrealistically low/high.`|
+|Non-numeric input|`Please provide a valid number for height/weight`|
+|Scientific notation|`Please provide a valid number for height/weight`|
+
 #### Design considerations
 
-**Alternative 1 (current choice): Separate `ViewProfileCommand` and `UpdateProfileCommand`**
+**Aspect: Implementation of updates**
 
-- Pros: Each command has a single responsibility. `ViewProfileCommand` is always a safe read-only 
-operation. Adding a new profile sub-command in the future (e.g. `profile reset`) only requires a new subclass.
-- Cons: Slightly more classes to maintain.
+- **Current choice: Separate Commands for View/Update/Clear**
 
-**Alternative 2: Single `ProfileCommand` that handles both `view` and `set`**
+    - **Pros**: Adheres to the Single Responsibility Principle. `UpdateProfileCommand` handles only the logic of state change, while `ViewProfileCommand` is a pure read operation.
 
-- Pros: Fewer classes.
-- Cons: The command must carry a mode flag and branch internally, mixing read and write logic in 
-one class. This reduces clarity and makes testing harder.
-
-Separate commands were chosen to preserve single responsibility and keep each command easy to 
-test and extend independently.
+    - **Cons**: Increases the number of classes in the command package.
 
 ---
 
@@ -1072,6 +1135,7 @@ Aspect: Calendar Alignment
 - Current choice: `java.time.YearMonth`: Perfectly encapsulates the requirement (Month + Year). It simplifies leap year handling and day-of-week calculations compared to the older `java.util.Calendar` API.
 
 ---
+
 ### Enhancement 14: Muscle Group Tagging System (`ExerciseDictionary` muscle methods, `TagMuscleCommand`, `UntagMuscleCommand`, `LiftMuscleGroupsCommand`, `ViewMuscleGroupCommand`, and `TrainMuscleCommand`)
 
 #### Purpose and user value
@@ -1092,11 +1156,26 @@ The four default lift shortcuts ship with pre-loaded muscle group tags (e.g. Ben
 
 #### Class-level design
 
+**Class Diagram: Muscle Tagging Command Hierarchy**
+![MuscleTaggingClassDiagram](images/MuscleTaggingClassDiagram.png)
+
 `ExerciseDictionary` is the shared data model for this system. It holds muscle group data in a `Map<Integer, EnumSet<MuscleGroup>>` field called `liftMuscleGroups`, keyed by lift shortcut ID. `MuscleGroup` is an enum with 14 values representing distinct muscle groups, each with a `displayName()` method that returns a lowercase, space-separated string for UI output.
 
 `TagMuscleCommand` and `UntagMuscleCommand` both extend the abstract `EditMuscleTagCommand`, which stores the shared fields `id`, `muscle`, and `dictionary`. This intermediate layer avoids duplicating constructor logic across the two commands while keeping each command's `execute(...)` method focused on a single operation.
 
 `LiftMuscleGroupsCommand`, `ViewMuscleGroupCommand`, and `TrainMuscleCommand` extend `Command` directly, as they have no shared state with the tag editing commands.
+
+---
+
+#### Object-level design (Memory Snapshot)
+
+The system stores metadata in a `Map<Integer, EnumSet<MuscleGroup>>` within the `ExerciseDictionary`.
+
+**Object Diagram: ExerciseDictionary Memory Snapshot (After adding tags to IDs 1 and 2)**
+![MuscleTaggingObjectDiagram](images/MuscleTaggingObjectDiagram.png)
+- **Technical Rationale**: An `EnumSet` is used instead of a `HashSet`
+because it is represented internally as a bit-vector. 
+This results in $O(1)$ lookup time and a significantly smaller memory footprint, which is ideal for a high-performance CLI application.
 
 ---
 
@@ -1114,11 +1193,16 @@ The four default lift shortcuts ship with pre-loaded muscle group tags (e.g. Ben
 
 1. Call `dictionary.tagMuscles(id, muscle)`.
 2. Display confirmation: `Added <muscle.displayName()> to lift <id>`.
+3. Shows `<muscle.displayName()> is already tagged to lift <id>` if muscle is already tagged.
+
+**Sequence Diagram: Execution of a `tag-muscle` Command (Scenario: Tagging ID 1 with 'quads')** 
+![TagMuscleSequenceDiagram](images/TagMuscleSequenceDiagram.png)
 
 **`UntagMuscleCommand.execute(...)`**
 
 1. Call `dictionary.untagMuscles(id, muscle)`.
 2. Display confirmation: `Removed <muscle.displayName()> from lift ID: <id>`.
+3. Shows `<muscle.displayName()> was not found on lift ID: <id>` if muscle tag does not exist.
 
 **`LiftMuscleGroupsCommand.execute(...)`**
 
@@ -1212,7 +1296,50 @@ This means custom tagging (both user-added and default tags modified at runtime)
 - **Current choice: `MuscleGroup` enum** — provides compile-time safety, a fixed set of valid values, and a clean `displayName()` method for UI output. `MuscleGroup.isValid(String)` gives the parser a single source of truth for validation.
 - **Alternative: plain strings stored in a set** — more flexible but allows arbitrary typos to enter the system. Rejected because the set of muscle groups is fixed and well-known, making an enum the more appropriate structure.
 
-### Notes for team writeups
+---
+
+### Enhancement 15: `HistoryCommand` 
+
+#### Purpose and user value
+
+The `history` command provides a chronological view of all logged workouts. With the v2.1 update, users can now specify an optional numeric limit (e.g., `history 5`) to quickly view only the most recent entries, reducing terminal clutter for power users with extensive training logs.
+
+#### Command format
+
+`history [NUMBER]`
+- `[NUMBER]`: Optional positive integer.
+- If omitted, the command displays the entire workout list.
+
+
+#### Design overview
+
+The `HistoryCommand` is a read-only operation that iterates through the `WorkoutList`.
+1. `Parser.parse(...)` detects the `history` keyword.
+2. If an argument exists, it is parsed via `parsePositiveIntegerWithinLimit`. If no argument is found, a sentinel value of `-1` is stored in the command.
+3. During execution, the command determines the starting index: `Math.max(0, workouts.getSize() - limit)`.
+
+
+#### UML Diagrams
+
+**Sequence Diagram: Execution of `history 3`**
+![HistorySequenceDiagram](images/HistorySequenceDiagram.png)
+
+#### Component-level behavior
+
+`HistoryCommand.execute(...)` performs the following steps:
+1. **Bounds Check**: If the requested number is larger than the total workouts, it defaults to showing the entire list.
+2. **Polymorphic Printing**: It iterates from the calculated starting index to the end of the list, calling `ui.printWorkout(workout, index)` for each entry. This ensures that the global index of the workout is preserved in the display, even when showing a partial list.
+
+
+#### Design considerations
+
+**Aspect: Processing Logic**
+
+- **Current Choice: Calculating start-index in the Command.** * **Pros:** Minimizes memory usage as it only iterates over the required slice of the list.
+    - **Alternative:** Retrieving the whole list and filtering in the UI.
+    - **Reason for Rejection:** Less efficient for very large logs; the Command should be responsible for data slicing logic.
+
+---
 
 ### Command Architecture
 
@@ -1326,3 +1453,35 @@ FitLogger provides a blazingly fast, distraction-free environment to log mixed-m
 * Action: Relaunch FitLogger.
 * Test case: `view-database`
 * Expected: Your custom `Muscle Up` shortcut should still be in the database.
+
+
+#### Profile Management
+
+**1. Setting and Viewing Profile**
+- Test case: `profile set name John Doe` `profile set height 1.8` `profile set weight 80`
+- Expected: Success messages for each field. Run `profile view` to confirm formatting (e.g., `1.80m`).
+- Test case: `profile set height 5.0` (Out of bounds)
+- Expected: Error message regarding unrealistic metrics.
+
+**2. Clearing Profile**
+- Test case: `profile clear`
+- Expected: Confirmation message. `profile view` should now show "not set yet" for all fields.
+
+#### Muscle Group Tagging
+
+**1. Tagging and Filtering**
+- Test case: `tag-muscle 1 quads` (Assuming ID 1 exists)
+- Expected: Success message.
+- Test case: `train quads`
+- Expected: Shortcut ID 1 appears in the list.
+
+#### History and Analytics
+
+**1. Limited History**
+- Prerequisites: Have at least 5 workouts logged.
+- Test case: `history 2`
+- Expected: Only the last 2 workouts are displayed, but they retain their original list indices.
+
+**2. Shoe Mileage Windowing**
+- Test case: `view-total-mileage 0`
+- Expected: Displays total distance for workouts logged **today** only.

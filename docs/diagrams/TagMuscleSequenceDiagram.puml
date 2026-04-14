@@ -1,0 +1,41 @@
+@startuml
+participant ":Parser" as Parser
+participant "t:TagMuscleCommand" as Tag
+participant "d:ExerciseDictionary" as Dictionary
+participant ":Ui" as Ui
+
+[-> Parser : parse("tag-muscle 1 quads")
+activate Parser
+
+Parser -> Dictionary : getLiftShortcuts()
+activate Dictionary
+Dictionary --> Parser : liftMap
+deactivate Dictionary
+
+Note right of Parser: Validates ID 1 exists in liftMap
+
+create Tag
+Parser -> Tag : new TagMuscleCommand(1, QUADS, d)
+activate Tag
+Tag --> Parser
+deactivate Tag
+
+[<-- Parser : t
+deactivate Parser
+
+[-> Tag : execute(..., d)
+activate Tag
+
+Tag -> Dictionary : tagMuscles(1, QUADS)
+activate Dictionary
+Dictionary --> Tag
+deactivate Dictionary
+
+Tag -> Ui : showMessage(...)
+activate Ui
+Ui --> Tag
+deactivate Ui
+
+[<-- Tag
+deactivate Tag
+@enduml

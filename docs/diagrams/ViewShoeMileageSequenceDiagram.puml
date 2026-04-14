@@ -1,0 +1,36 @@
+@startuml
+participant ":ViewShoeMileageCommand" as Command
+participant ":WorkoutList" as List
+participant "w:RunWorkout" as Run
+
+[-> Command : execute(storage, workouts, ui, profile)
+activate Command
+
+Command -> Command : calculateCutoffDate()
+
+loop for each workout in list
+    Command -> List : getWorkoutAtIndex(i)
+    activate List
+    List --> Command : w
+    deactivate List
+
+    alt w instanceof RunWorkout
+        Command -> Run : getDate()
+        activate Run
+        Run --> Command : date
+        deactivate Run
+
+        alt daysLimit == -1 OR !date.isBefore(cutoffDate)
+            Command -> Run : getDistance()
+            activate Run
+            Run --> Command : dist
+            deactivate Run
+            Command -> Command : totalMileage += dist
+            Command -> Command : numberOfRuns++
+        end
+    end
+end
+
+Command -> ":Ui" : showMessage(...)
+deactivate Command
+@enduml

@@ -1,0 +1,36 @@
+@startuml
+participant ":FitLogger" as Main
+participant ":Parser" as Parser
+participant "h:HistoryCommand" as History
+participant ":WorkoutList" as List
+
+Main -> Parser : parse("history 3")
+activate Parser
+create History
+Parser -> History : new HistoryCommand(3)
+activate History
+History --> Parser
+deactivate History
+Parser --> Main : h
+deactivate Parser
+
+Main -> History : execute(..., workouts, ui, ...)
+activate History
+History -> List : getSize()
+activate List
+List --> History : totalCount (e.g., 10)
+deactivate List
+
+Note over History : startIndex = Math.max(0, 10 - 3) = 7
+
+loop from i = 7 to 9
+    History -> List : getWorkout(i)
+    activate List
+    List --> History : w
+    deactivate List
+    History -> ":Ui" : printWorkout(w, i+1)
+end
+
+History --> Main
+deactivate History
+@enduml

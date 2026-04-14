@@ -1,0 +1,42 @@
+@startuml
+skinparam classAttributeIconSize 0
+hide circle
+
+abstract class Command {
+    + {abstract} execute(...)
+}
+
+abstract class EditMuscleTagCommand {
+    # id: int
+    # muscle: MuscleGroup
+    + EditMuscleTagCommand(int, MuscleGroup, ExerciseDictionary)
+}
+
+class TagMuscleCommand {
+    + execute(...)
+}
+
+class UntagMuscleCommand {
+    + execute(...)
+}
+
+class ExerciseDictionary {
+    - liftMuscleGroups: Map<Integer, EnumSet<MuscleGroup>>
+    + tagMuscles(int, MuscleGroup)
+    + untagMuscles(int, MuscleGroup)
+    + getMusclesFor(int): EnumSet<MuscleGroup>
+}
+
+enum MuscleGroup <<enumeration>> {
+    + displayName(): String
+}
+
+Command <|-- EditMuscleTagCommand
+Command <|-- TrainMuscleCommand
+Command <|-- LiftMuscleGroupsCommand
+EditMuscleTagCommand <|-- TagMuscleCommand
+EditMuscleTagCommand <|-- UntagMuscleCommand
+
+EditMuscleTagCommand -down-> "1" ExerciseDictionary : dictionary >
+EditMuscleTagCommand -right-> MuscleGroup
+@enduml
